@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ASSERT(res) { if (res == -1){ error((char*)__func__, strerror(errno)); }}
+#define ASSERT(res) { if (res < 0){ error((char*)__func__, strerror(errno)); }}
 #define DIR "resources"
 
 
