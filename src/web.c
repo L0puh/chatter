@@ -36,10 +36,14 @@ int get_request(char* message, size_t sz){
    return NONE;
 }
 
-char* remove_prefix(const char* msg, const char* x){
+char* remove_prefix(char* msg, const char* x){
    int cnt = 0;
    char* prefix = malloc(strlen(msg));
    while (strcmp(prefix, x) != 0){
+      if (msg[cnt] == ' ') {
+         logger(__func__, "prefix isn't found");
+         return NULL;
+      }
       prefix[cnt] = msg[cnt];
       cnt++;
    }
@@ -53,7 +57,9 @@ char* remove_prefix(const char* msg, const char* x){
 char* get_input(char* message){
    char *token, *res[MAXLEN];
    int cur=0;
-   token = strtok(remove_prefix(message, "input="), "+");
+   message = remove_prefix(message, "input=");
+   if (message == NULL) return "";
+   token = strtok(message, "+");
    while (token != NULL){
       res[cur] = token;    
       cur++;
@@ -74,7 +80,7 @@ char* parse_get(char* message, size_t sz, char* res, char* symbol){
    if (res == NULL) 
       error(__func__, "given string is NULL");
 
-   res = malloc(32);
+   res = malloc(MAXLEN);
    token = strtok(message, symbol); 
 
    while(token != NULL){

@@ -20,8 +20,10 @@ void handle_client(int client_sockfd){
    if (bytes > 0 && get_request(GLOBAL.buffer, bytes) == GET){
       cnt++;
       char *res, *input;
-      res = parse_get(GLOBAL.buffer, bytes, res, "?");
+      res = parse_get(GLOBAL.buffer, bytes, res, " ");
+      res = parse_get(res, strlen(res), res, "?");
       input = get_input(res);
+      printf("INPUT: %s\n", input);
    }
    
    /*FIXME: this is a hack, fix it later*/
