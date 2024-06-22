@@ -7,11 +7,14 @@
 #define ASSERT(res) { if (res < 0){ error((char*)__func__, strerror(errno)); }}
 #define DIR "resources"
 
-
 void print_usage(int argc);
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
+int is_contain(char* message, char symbol);
 
-char* get_file_content(char* filename);
+char* get_file_content(char* filename, size_t *sz);
+void write_to_file(char* filename, char* input, char* mode);
+void write_html();
+char* remove_prefix(char* msg, const char* x);
 
 #endif

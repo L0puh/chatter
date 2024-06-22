@@ -16,8 +16,10 @@ int main(int argc, char* argv[]){
    init_server(atoi(argv[1]), &sockfd, &servaddr, sizeof(servaddr));
    
    GLOBAL.SERVER_RUNNING = 1;
+   GLOBAL.current_page = "index.html";
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, NULL, NULL)));
+      logger("INFO", "new connection");
       handle_client(client_sockfd);
    }
 

@@ -6,6 +6,7 @@
 struct state{
    int SERVER_RUNNING;
    char buffer[MAXLEN];
+   char* current_page;
 };
 
 extern struct state GLOBAL;

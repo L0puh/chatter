@@ -1,5 +1,4 @@
 #include "web.h"
-#include "state.h"
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,7 @@ void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz)
    bzero(servaddr, sz);
    servaddr->sin_port = htons(port);
    servaddr->sin_family = AF_INET;
-   servaddr->sin_addr.s_addr = INADDR_ANY; /* FIXME: set up an ip */
+   servaddr->sin_addr.s_addr = INADDR_ANY; 
 
    ASSERT(bind(*sockfd, (const struct sockaddr*)servaddr, sz));
    ASSERT(listen(*sockfd, QUERY));
@@ -36,23 +35,6 @@ int get_request(char* message, size_t sz){
    return NONE;
 }
 
-char* remove_prefix(char* msg, const char* x){
-   int cnt = 0;
-   char* prefix = malloc(strlen(msg));
-   while (strcmp(prefix, x) != 0){
-      if (msg[cnt] == ' ') {
-         logger(__func__, "prefix isn't found");
-         return NULL;
-      }
-      prefix[cnt] = msg[cnt];
-      cnt++;
-   }
-   char* res = malloc(strlen(msg) - cnt);
-   for(int i = cnt; i < strlen(msg); i++){
-      res[i-cnt] = msg[i];
-   }
-   return res;
-}
 
 char* get_input(char* message){
    char *token, *res[MAXLEN];
@@ -74,7 +56,7 @@ char* get_input(char* message){
    return str;
 }
 
-char* parse_get(char* message, size_t sz, char* res, char* symbol){
+char* get_parse(char* message, size_t sz, char* res, char* symbol){
    char* token; int cur = 0;
 
    if (res == NULL) 
