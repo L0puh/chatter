@@ -16,6 +16,6 @@ int is_contain(char* message, char symbol);
 char* get_file_content(char* filename, size_t *sz);
 void write_to_file(char* filename, char* input, char* mode);
 void write_html();
-char* remove_prefix(char* msg, const char* x);
+char* remove_prefix(const char* msg, const char* x);
 
 #endif

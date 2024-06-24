@@ -70,13 +70,13 @@ void print_usage(int argc){
    }
 }
 
-char* remove_prefix(char* msg, const char* x){
+char* remove_prefix(const char* msg, const char* x){
    int cnt = 0;
    char* prefix = malloc(strlen(msg));
    while (strcmp(prefix, x) != 0 && cnt < strlen(msg)){
       if (msg[cnt] == '\n' || cnt+1 >= strlen(msg)) {
          logger(__func__, "prefix isn't found");
-         return msg;
+         return (char*) msg;
       }
       prefix[cnt] = msg[cnt];
       cnt++;

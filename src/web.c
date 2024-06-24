@@ -39,32 +39,30 @@ int get_request(char* message, size_t sz){
 
 
 char* get_input(const char* message){
-   int cur=0;
-   char *token, *res[MAXLEN];
-   char *cpy_msg = malloc(strlen(message) * CHAR_BIT);
-   strcpy(cpy_msg, message);
-   cpy_msg = remove_prefix(cpy_msg, "input=");
-   if (message == NULL) return "";
-   token = strtok(cpy_msg, "+");
-   while (token != NULL && cur < strlen(cpy_msg)){
-      res[cur] = token;    
-      printf("%s\n", res[cur]);
-      cur++;
+   int cur = 0, total_len = 0;
+   char* str = remove_prefix(message, "input=");
+   char* sentence[MAXLEN];
+   printf("%s\n", str);
+   char* token = strtok(str, "+");
+
+   while (token != NULL && cur < MAXLEN){
+      sentence[cur++] = token;
+      total_len += strlen(token) + 1;
       token = strtok(NULL, "+");
    }
-   char *str = malloc(MAXLEN);
+  
+   char *res = malloc(total_len);
    for (int i = 0; i < cur; i++){
-      if (res[i] == NULL) break;
-      strcat(str, res[i]);
-      strcat(str, " ");
+      strcat(res, sentence[i]);
+      strcat(res, " ");
    }
-   return str;
+   return res;
 }
 
 char* get_parse(const char* message, size_t sz, const char* symbol){
    char* token; int cur = 0;
-   char* res = malloc(strlen(message) * CHAR_BIT);
-   char* copy_msg = malloc(strlen(message) * CHAR_BIT);
+   char* res = malloc(strlen(message));
+   char* copy_msg = malloc(strlen(message));
    strcpy(copy_msg, message);
    
    token = strtok(copy_msg, symbol); 
