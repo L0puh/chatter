@@ -19,7 +19,6 @@ int main(int argc, char* argv[]){
    GLOBAL.current_page = "index.html";
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, NULL, NULL)));
-      logger("INFO", "new connection");
       handle_client(client_sockfd);
    }
 

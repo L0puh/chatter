@@ -5,6 +5,32 @@
 #include "state.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+
+const char* availabe_routs[] = {
+   "index.html", 
+   "",
+   "/",
+   "error.html"
+};
+
+void set_current_page(char* res){
+   if (strcmp(res, "/") == 0 || strcmp(res, "/index.html") == 0){
+      GLOBAL.current_page = "index.html";
+      return;
+   }
+   res = remove_prefix(res, "/");
+   for (int i = 0; i < LEN(availabe_routs); i++){
+      if (strcmp(res, availabe_routs[i]) == 0){
+         GLOBAL.current_page = res;
+         return;
+      }
+   }
+   GLOBAL.current_page = "error.html";
+   logger(__func__, "page isn't found");
+   return;
+}
 
 void recv_loop(int client_sockfd, int *bytes){
    while ((*bytes = recv(client_sockfd, GLOBAL.buffer, sizeof(GLOBAL.buffer), 0)) <= 0){}
@@ -12,17 +38,16 @@ void recv_loop(int client_sockfd, int *bytes){
 }
 
 void handle_client(int client_sockfd){
-   int bytes, cnt = 0;  
+   int bytes;  
+   char *res, *input, *new;
    
    recv_loop(client_sockfd, &bytes);
+   GLOBAL.buffer[bytes+1] = '\0';
 
    if (bytes > 0 && get_request(GLOBAL.buffer, bytes) == GET){
-      cnt++;
-      char *res, *input, *new;
-      res = get_parse(GLOBAL.buffer, bytes, res, " ");
+      res = get_parse(GLOBAL.buffer, bytes, " ");
       if (is_contain(res, '?')){
-         res = get_parse(res, strlen(res), res, "?");
-         input = get_input(res);
+         input = get_input(get_parse(res, strlen(res), "?"));
          new = malloc(MAXLEN); 
          sprintf(new, "<p>%s</p>\n", input);
          write_to_file("text.txt", new, "a");
@@ -30,10 +55,8 @@ void handle_client(int client_sockfd){
          printf("INPUT: %s\n", input);
          free(input); free(new);
       } else if (is_contain(res, '/')){
-         res = remove_prefix(res, "/");
-         GLOBAL.current_page = res;
+         set_current_page(res);
       }
-      /* free(res); free(new); free(input); */
    }
    /*FIXME: this is a hack, fix it later*/
 

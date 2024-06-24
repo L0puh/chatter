@@ -28,9 +28,10 @@ enum REQ {
 
 void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz);
 int get_request(char* message, size_t sz);
-char* get_input(char* message);
-char* get_parse(char* message, size_t sz, char* res, char* symbol);
+char* get_input(const char* message);
+char* get_parse(const char* message, size_t sz, const char* symbol);
 
 void handle_client(int sockfd);
+void set_current_page(char *input);
 
 #endif

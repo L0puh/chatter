@@ -1,8 +1,10 @@
 #include "web.h"
 #include "utils.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
    char message[32]; int enable = 1;
@@ -36,14 +38,17 @@ int get_request(char* message, size_t sz){
 }
 
 
-char* get_input(char* message){
-   char *token, *res[MAXLEN];
+char* get_input(const char* message){
    int cur=0;
-   message = remove_prefix(message, "input=");
+   char *token, *res[MAXLEN];
+   char *cpy_msg = malloc(strlen(message) * CHAR_BIT);
+   strcpy(cpy_msg, message);
+   cpy_msg = remove_prefix(cpy_msg, "input=");
    if (message == NULL) return "";
-   token = strtok(message, "+");
-   while (token != NULL){
+   token = strtok(cpy_msg, "+");
+   while (token != NULL && cur < strlen(cpy_msg)){
       res[cur] = token;    
+      printf("%s\n", res[cur]);
       cur++;
       token = strtok(NULL, "+");
    }
@@ -56,20 +61,20 @@ char* get_input(char* message){
    return str;
 }
 
-char* get_parse(char* message, size_t sz, char* res, char* symbol){
+char* get_parse(const char* message, size_t sz, const char* symbol){
    char* token; int cur = 0;
-
-   if (res == NULL) 
-      error(__func__, "given string is NULL");
-
-   res = malloc(MAXLEN);
-   token = strtok(message, symbol); 
+   char* res = malloc(strlen(message) * CHAR_BIT);
+   char* copy_msg = malloc(strlen(message) * CHAR_BIT);
+   strcpy(copy_msg, message);
+   
+   token = strtok(copy_msg, symbol); 
 
    while(token != NULL){
       token = strtok(NULL, " ");
       if (cur == 0){
          res = token;
-         if (res == NULL) res = "";
+         if (res == NULL) 
+            res = "";
          return res;
       }
       cur++;

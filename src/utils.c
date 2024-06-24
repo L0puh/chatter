@@ -1,10 +1,12 @@
 #include "utils.h"
 #include "web.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 void write_html(){
    size_t sz_header, sz_sender, sz_text;
@@ -71,16 +73,18 @@ void print_usage(int argc){
 char* remove_prefix(char* msg, const char* x){
    int cnt = 0;
    char* prefix = malloc(strlen(msg));
-   while (strcmp(prefix, x) != 0){
-      if (msg[cnt] == ' ') {
+   while (strcmp(prefix, x) != 0 && cnt < strlen(msg)){
+      if (msg[cnt] == '\n' || cnt+1 >= strlen(msg)) {
          logger(__func__, "prefix isn't found");
-         return NULL;
+         return msg;
       }
       prefix[cnt] = msg[cnt];
       cnt++;
-   }
+   } 
    char* res = malloc(strlen(msg) - cnt);
    for(int i = cnt; i < strlen(msg); i++){
+      if (res[i] == '\t' || res[i] == '\n' || res[i] == EOF)
+         return res;
       res[i-cnt] = msg[i];
    }
    return res;
