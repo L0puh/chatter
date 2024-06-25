@@ -14,7 +14,6 @@ int main(int argc, char* argv[]){
 
    print_usage(argc);
    init_server(atoi(argv[1]), &sockfd, &servaddr, sizeof(servaddr));
-   
    GLOBAL.SERVER_RUNNING = 1;
    GLOBAL.current_page = "index.html";
    while(GLOBAL.SERVER_RUNNING){ 

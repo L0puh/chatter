@@ -9,11 +9,9 @@
 
 
 void write_html(){
-   size_t sz_header, sz_sender, sz_text;
-   sz_header = sz_sender = sz_text = MAXLEN;
-   char* header = get_file_content("header.html", &sz_header);
-   char* sender = get_file_content("sender.html", &sz_sender);
-   char* text   = get_file_content("text.txt", &sz_text); //FIXME
+   char* header = get_file_content("header.html", 0);
+   char* sender = get_file_content("sender.html", 0);
+   char* text   = get_file_content("text.txt", 0); //FIXME
    write_to_file("index.html", header, "w");
    write_to_file("index.html", text, "a");
    write_to_file("index.html", sender, "a");
@@ -29,30 +27,49 @@ void write_to_file(char* filename, char* input, char* mode){
    fclose(f);
 }
 
-char* get_file_content(char* filename, size_t *sz){
-   /* FIXME: reallocate stuff properly */
-   int cnt = 0;
-   size_t size = *sz;
-   char ch, *string, name[64];
-   
-   string = (char*) malloc(size * CHAR_BIT);
+char* get_file_content(char* filename, size_t *init_size){
+   FILE *file;
+   char ch, *string, name[64]; 
+   size_t size = MAXLEN, total_cnt = 0;
+
+   if (init_size != 0 && init_size != NULL) 
+      size = *init_size;
+
+   if ((string = malloc(size * CHAR_BIT)) == NULL) {
+      error(__func__, "failed allocation of string");
+      return NULL;
+   }
+
+   bzero(string, strlen(string));
    sprintf(name, "%s/%s", DIR, filename);
-   FILE* file = fopen(name, "r");
-   if (file == NULL) 
-      error(__func__, "open file");
-   do {
-      ch = fgetc(file);
-      string[cnt++] = ch;
-      if (cnt >= size){
-         size*=2;
-         if (realloc(string, size) == NULL) 
-            error(__func__, "realloc error");
-         logger(__func__, "allocate more memory");
-      }
-   } while (ch != EOF);
-   string[cnt-1] = '\0';
-   *sz = size;
-   return string; 
+
+   file = fopen(name, "r");
+   if (file == NULL){
+      error(__func__, name);
+      return NULL;
+   }
+
+    while((ch = fgetc(file)) != EOF){
+       string[total_cnt++] = ch;
+       if (total_cnt >= size){
+          size+=MAXLEN;
+          if ((string = realloc(string, size * CHAR_BIT)) == NULL){
+             error(__func__, "failed realloc");
+             return NULL;
+          }
+          logger(__func__, "realloc new memory");
+       }
+    }
+
+  
+   if (init_size != 0 && init_size != NULL)
+      *init_size = size;
+   if (total_cnt < size) 
+      string[total_cnt] = '\0';
+
+   fclose(file);
+   return string;
+   
 }
 
 
@@ -72,21 +89,24 @@ void print_usage(int argc){
 
 char* remove_prefix(const char* msg, const char* x){
    int cnt = 0;
-   char* prefix = malloc(strlen(msg));
+   char* prefix = malloc(strlen(msg) * CHAR_BIT);
    while (strcmp(prefix, x) != 0 && cnt < strlen(msg)){
       if (msg[cnt] == '\n' || cnt+1 >= strlen(msg)) {
-         logger(__func__, "prefix isn't found");
+         logger(x, "prefix isn't found");
          return (char*) msg;
       }
       prefix[cnt] = msg[cnt];
       cnt++;
    } 
-   char* res = malloc(strlen(msg) - cnt);
+   char* res = malloc((strlen(msg) - cnt)+1);
    for(int i = cnt; i < strlen(msg); i++){
-      if (res[i] == '\t' || res[i] == '\n' || res[i] == EOF)
+      if (res[i] == '\t' || res[i] == '\n' || res[i] == EOF){
+         res[i]='\0';
          return res;
+      }
       res[i-cnt] = msg[i];
    }
+   res[(strlen(msg)-cnt)]='\0';
    return res;
 }
 

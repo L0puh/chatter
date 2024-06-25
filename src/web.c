@@ -40,29 +40,28 @@ int get_request(char* message, size_t sz){
 
 char* get_input(const char* message){
    int cur = 0, total_len = 0;
-   char* str = remove_prefix(message, "input=");
-   char* sentence[MAXLEN];
-   printf("%s\n", str);
-   char* token = strtok(str, "+");
+   char *str, *token;
+   
+   str = remove_prefix(message, "input=");
+   token = strtok(str, "+");
+   
+   char *res = malloc((MAXLEN+1) * CHAR_BIT);
+   bzero(res, strlen(res));
 
-   while (token != NULL && cur < MAXLEN){
-      sentence[cur++] = token;
+   while (token != NULL && cur < MAXLEN && total_len < MAXLEN){
+      strcat(res, token);
+      strcat(res, " ");
       total_len += strlen(token) + 1;
       token = strtok(NULL, "+");
    }
-  
-   char *res = malloc(total_len);
-   for (int i = 0; i < cur; i++){
-      strcat(res, sentence[i]);
-      strcat(res, " ");
-   }
+   res[total_len] = '\0';
    return res;
 }
 
 char* get_parse(const char* message, size_t sz, const char* symbol){
    char* token; int cur = 0;
-   char* res = malloc(strlen(message));
-   char* copy_msg = malloc(strlen(message));
+   char* res = malloc(sz * CHAR_BIT);
+   char* copy_msg = malloc(sz * CHAR_BIT);
    strcpy(copy_msg, message);
    
    token = strtok(copy_msg, symbol); 
