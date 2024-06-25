@@ -1,7 +1,6 @@
 #include "utils.h"
 #include "web.h"
 
-#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,15 +8,15 @@
 
 
 void write_html(){
-   char* header = get_file_content("header.html", 0);
-   char* sender = get_file_content("sender.html", 0);
-   char* text   = get_file_content("text.txt", 0); //FIXME
-   write_to_file("index.html", header, "w");
-   write_to_file("index.html", text, "a");
-   write_to_file("index.html", sender, "a");
+   char* header = get_file_content(HEADER_PAGE, 0);
+   char* sender = get_file_content(SENDER_PAGE, 0);
+   char* text   = get_file_content(DATABASE_FILE, 0); 
+   write_to_file(INDEX_PAGE, header, "w");
+   write_to_file(INDEX_PAGE, text, "a");
+   write_to_file(INDEX_PAGE, sender, "a");
 }
 
-void write_to_file(char* filename, char* input, char* mode){
+void write_to_file(const char* filename, char* input, char* mode){
    char name[32];
    sprintf(name, "%s/%s", DIR, filename);
    FILE* f = fopen(name, mode);
@@ -27,7 +26,7 @@ void write_to_file(char* filename, char* input, char* mode){
    fclose(f);
 }
 
-char* get_file_content(char* filename, size_t *init_size){
+char* get_file_content(const char* filename, size_t *init_size){
    FILE *file;
    char ch, *string, name[64]; 
    size_t size = MAXLEN, total_cnt = 0;

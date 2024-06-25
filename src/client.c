@@ -8,16 +8,9 @@
 #include <string.h>
 
 
-const char* available_routs[] = {
-   "index.html", 
-   "",
-   "/",
-   "error.html"
-};
-
 void set_current_page(char* res){
    if (strcmp(res, "/") == 0 || strcmp(res, "/index.html") == 0){
-      GLOBAL.current_page = "index.html";
+      GLOBAL.current_page = INDEX_PAGE;
       return;
    }
    res = remove_prefix(res, "/");
@@ -27,13 +20,15 @@ void set_current_page(char* res){
          return;
       }
    }
-   GLOBAL.current_page = "error.html";
+   GLOBAL.current_page = ERROR_PAGE;
    logger(res, "page isn't found");
    return;
 }
 
 void recv_loop(int client_sockfd, int *bytes){
-   while ((*bytes = recv(client_sockfd, GLOBAL.buffer, sizeof(GLOBAL.buffer), 0)) <= 0){}
+   while ((*bytes = recv(client_sockfd, 
+                        GLOBAL.buffer, 
+                        sizeof(GLOBAL.buffer), 0)) <= 0){}
    ASSERT(bytes);
 }
 
@@ -42,21 +37,43 @@ void write_input(char* buffer, size_t sz){
    new = malloc(MAXLEN); 
 
    input = get_input(get_parse(buffer, sz, "?"));
-   sprintf(new, "<p>%s</p>\n", input);
+   sprintf(new, FORMAT, input);
 
-   write_to_file("text.txt", new, "a");
+   write_to_file(DATABASE_FILE, new, "a");
    write_html();
 
    free(input); free(new);
 }
 
-void handle_client(int client_sockfd){
-   int bytes;  
-   char* res;
-   
-   recv_loop(client_sockfd, &bytes);
-   GLOBAL.buffer[bytes+1] = '\0';
+void send_request(int client_sockfd, enum REQ type){
+   size_t msg_sz = MAXLEN;
+   int bytes_sent, total;
+   char *header, *message, *result;
 
+   switch(type){
+      case OK:
+         header = get_file_content(REQ_OK, 0);
+         break;
+      default:
+         header = get_file_content(REQ_OK, 0);
+
+   }
+   message = get_file_content(GLOBAL.current_page, &msg_sz);
+   result = malloc(msg_sz + MAXLEN);
+   
+   sprintf(result, "%s%lu\n\n%s", header, strlen(message), message);
+   bytes_sent = 0, total = strlen(result);
+   
+   while (bytes_sent < total){
+      bytes_sent = send(client_sockfd, result, strlen(result), 0);
+      ASSERT(bytes_sent);
+   }
+  
+   free(header); free(result); free(message); 
+}
+
+void handle_request(int bytes){
+   char* res;
    if (bytes > 0 && get_request(GLOBAL.buffer, bytes) == GET){
       res = get_parse(GLOBAL.buffer, bytes, " ");
       if (is_contain(res, '?')){
@@ -65,18 +82,14 @@ void handle_client(int client_sockfd){
          set_current_page(res);
       }
    }
-   /*FIXME: this is a hack, fix it later*/
-   size_t msg_sz = MAXLEN;
-   char* h = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
-   char* m = get_file_content(GLOBAL.current_page, &msg_sz);
-   char* r = malloc(msg_sz + MAXLEN);
-   sprintf(r, "%s%lu\n\n%s", h, strlen(m), m);
-   int bytes_sent = 0, total = strlen(r);
-   
-   while (bytes_sent < total){
-      bytes_sent = send(client_sockfd, r, strlen(r), 0);
-      ASSERT(bytes_sent);
-   }
+}
+
+void handle_client(int client_sockfd){
+   int bytes;  
   
-   free(r); free(m); 
+   recv_loop(client_sockfd, &bytes);
+   GLOBAL.buffer[bytes+1] = '\0';
+
+   handle_request(bytes);
+   send_request(client_sockfd, OK);
 }
