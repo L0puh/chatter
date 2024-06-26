@@ -24,7 +24,7 @@ void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz)
    sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
 }
 
-int get_request(char* message, size_t sz){
+int get_type_request(char* message, size_t sz){
    char *s = malloc(MAXLEN);
    for (int i = 0; i < sz; i++){
       s[i] = message[i]; 
@@ -37,6 +37,12 @@ int get_request(char* message, size_t sz){
    return NONE;
 }
 
+char* get_str_addr(struct sockaddr_in addr){
+   char* str_addr = malloc(INET_ADDRSTRLEN+1); 
+   ASSERT(inet_ntop(addr.sin_family, &(addr.sin_addr), str_addr, INET_ADDRSTRLEN));
+   str_addr[INET_ADDRSTRLEN] = '\0';
+   return str_addr;
+}
 
 char* get_input(const char* message){
    int cur = 0, total_len = 0;

@@ -2,11 +2,9 @@
 #include "utils.h"
 #include "state.h"
 
-#include "state.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 void set_current_page(char* res){
    if (strcmp(res, "/") == 0 || strcmp(res, "/index.html") == 0){
@@ -74,7 +72,7 @@ void send_request(int client_sockfd, enum REQ type){
 
 void handle_request(int bytes){
    char* res;
-   if (bytes > 0 && get_request(GLOBAL.buffer, bytes) == GET){
+   if (bytes > 0 && get_type_request(GLOBAL.buffer, bytes) == GET){
       res = get_parse(GLOBAL.buffer, bytes, " ");
       if (is_contain(res, '?')){
          write_input(res, strlen(res));
@@ -86,10 +84,10 @@ void handle_request(int bytes){
 
 void handle_client(int client_sockfd){
    int bytes;  
-  
    recv_loop(client_sockfd, &bytes);
    GLOBAL.buffer[bytes+1] = '\0';
-
    handle_request(bytes);
    send_request(client_sockfd, OK);
 }
+
+

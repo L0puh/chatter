@@ -9,6 +9,7 @@
 #define DIR "resources"
 
 void print_usage(int argc);
+
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
 int is_contain(char* message, char symbol);

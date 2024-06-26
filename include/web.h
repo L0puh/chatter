@@ -48,9 +48,10 @@ static char* available_routs[] = {
 
 void init_server(int port, int *sockfd, struct sockaddr_in*, size_t);
 
-int get_request(char* message, size_t sz);
+int get_type_request(char* message, size_t sz);
 char* get_input(const char* message);
 char* get_parse(const char* message, size_t sz, const char* symbol);
+char* get_str_addr(struct sockaddr_in addr);
 
 void handle_client(int sockfd);
 void handle_request(int bytes);
