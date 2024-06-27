@@ -24,16 +24,19 @@ enum REQ {
    OK
 };
 
+typedef struct {
+   int sockfd;
+   char* addr; 
+} user_t;
 
 /************************************************************/
 
-static char* FORMAT = "<p>%s</p>\n";
+static char* CLEAR_COMMAND = "/clear.html";
 static char* INDEX_PAGE = "index.html";
 static char* ERROR_PAGE = "error.html";
 static char* HEADER_PAGE = "header.html";
 static char* SENDER_PAGE = "sender.html";
 static char* DATABASE_FILE = "text.txt"; 
-
 static char* REQ_OK = "request_ok.txt";
 
 
@@ -41,7 +44,7 @@ static char* available_routs[] = {
    "index.html", 
    "",
    "/",
-   "error.html"
+   "error.html",
 };
 
 /************************************************************/
@@ -53,10 +56,11 @@ char* get_input(const char* message);
 char* get_parse(const char* message, size_t sz, const char* symbol);
 char* get_str_addr(struct sockaddr_in addr);
 
-void handle_client(int sockfd);
-void handle_request(int bytes);
+void* handle_client(void* user);
+void handle_request(user_t user, int bytes);
 
 void set_current_page(char *input);
+void url_decode(char* str);
 void send_request(int client_sockfd, enum REQ type);
 void recv_loop(int client_sockfd, int *bytes);
 

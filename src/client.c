@@ -2,12 +2,13 @@
 #include "utils.h"
 #include "state.h"
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 void set_current_page(char* res){
-   if (strcmp(res, "/") == 0 || strcmp(res, "/index.html") == 0){
+   if (strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND)){
       GLOBAL.current_page = INDEX_PAGE;
       return;
    }
@@ -30,15 +31,15 @@ void recv_loop(int client_sockfd, int *bytes){
    ASSERT(bytes);
 }
 
-void write_input(char* buffer, size_t sz){
-   char *input, *new;
+void write_input(char* buffer, size_t sz, char* data){
+   char *input, *new, *format;
+   format = "<p><span style=\"color:#b0716f\"> %s: </span><span>%s </span></p>";
    new = malloc(MAXLEN); 
-
+   
    input = get_input(get_parse(buffer, sz, "?"));
-   sprintf(new, FORMAT, input);
-
+   sprintf(new, format, data, input);
    write_to_file(DATABASE_FILE, new, "a");
-   write_html();
+   update_html();
 
    free(input); free(new);
 }
@@ -70,24 +71,41 @@ void send_request(int client_sockfd, enum REQ type){
    free(header); free(result); free(message); 
 }
 
-void handle_request(int bytes){
+void handle_request(user_t user, int bytes){
    char* res;
    if (bytes > 0 && get_type_request(GLOBAL.buffer, bytes) == GET){
       res = get_parse(GLOBAL.buffer, bytes, " ");
+         
       if (is_contain(res, '?')){
-         write_input(res, strlen(res));
+         write_input(res, strlen(res), user.addr);
       } else if (is_contain(res, '/')){
          set_current_page(res);
+
+         /* FIXME: add database */
+         if (strcmp(res, CLEAR_COMMAND) == 0){
+            system("rm -f resources/text.txt && touch resources/text.txt"); 
+            update_html();
+         }
       }
    }
 }
 
-void handle_client(int client_sockfd){
-   int bytes;  
-   recv_loop(client_sockfd, &bytes);
-   GLOBAL.buffer[bytes+1] = '\0';
-   handle_request(bytes);
-   send_request(client_sockfd, OK);
+void* handle_client(void* th_user){
+   int bytes;
+   user_t user = *(user_t*)th_user;
+   
+   while((bytes = recv(user.sockfd, GLOBAL.buffer, 
+                  sizeof(GLOBAL.buffer), 0)) > 0 
+                  && GLOBAL.SERVER_RUNNING)
+   {
+      GLOBAL.buffer[bytes+1] = '\0';
+      handle_request(user, bytes);
+      send_request(user.sockfd, OK);
+   }
+   ASSERT(bytes);
+   close(user.sockfd);
+   pthread_exit((void*)(-1));
+   return 0;
 }
 
 

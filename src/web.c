@@ -1,5 +1,6 @@
 #include "web.h"
 #include "utils.h"
+#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,12 +45,9 @@ char* get_str_addr(struct sockaddr_in addr){
    return str_addr;
 }
 
-char* get_input(const char* message){
-   int cur = 0, total_len = 0;
-   char *str, *token;
-   
-   str = remove_prefix(message, "input=");
-   token = strtok(str, "+");
+char* get_sentence(char* str) {
+   int cur = 1, total_len = 0;
+   char* token = strtok(str, "+");
    
    char *res = malloc((MAXLEN+1) * CHAR_BIT);
    bzero(res, strlen(res));
@@ -61,7 +59,13 @@ char* get_input(const char* message){
       token = strtok(NULL, "+");
    }
    res[total_len] = '\0';
-   return res;
+   return str;
+}
+char* get_input(const char* message){
+   char *str;
+   str = remove_prefix(message, "input=");
+   url_decode(str);
+   return str;
 }
 
 char* get_parse(const char* message, size_t sz, const char* symbol){
@@ -84,4 +88,28 @@ char* get_parse(const char* message, size_t sz, const char* symbol){
    }
    free(token); 
    return res;
+}
+
+void url_decode(char* str){
+   char* p = str;
+   while(*p){
+      if (*p == '+'){
+         *str++ =' ';
+         p++;
+      } else if (*p == '%'){
+         p++;
+         if (isxdigit(*p)){
+            if (isxdigit(p[1])){
+               uint8_t x;
+               sscanf(p, "%02hhx", &x);
+               *str++=x;
+               p+=2;
+            } else { 
+               *str++='%';
+               p++;
+            }
+         } else p++;
+      } else *str++ = *p++;
+   }
+   *str='\0';
 }

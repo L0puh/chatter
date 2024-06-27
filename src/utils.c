@@ -7,12 +7,13 @@
 #include <string.h>
 
 
-void write_html(){
+void update_html(){
    char* header = get_file_content(HEADER_PAGE, 0);
    char* sender = get_file_content(SENDER_PAGE, 0);
    char* text   = get_file_content(DATABASE_FILE, 0); 
    write_to_file(INDEX_PAGE, header, "w");
-   write_to_file(INDEX_PAGE, text, "a");
+   if (strcmp(text, "") != 0)
+      write_to_file(INDEX_PAGE, text,   "a");
    write_to_file(INDEX_PAGE, sender, "a");
 }
 
@@ -45,7 +46,7 @@ char* get_file_content(const char* filename, size_t *init_size){
    file = fopen(name, "r");
    if (file == NULL){
       error(__func__, name);
-      return NULL;
+      return "";
    }
 
     while((ch = fgetc(file)) != EOF){
