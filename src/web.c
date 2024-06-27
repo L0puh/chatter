@@ -61,11 +61,9 @@ char* get_sentence(char* str) {
    res[total_len] = '\0';
    return str;
 }
-char* get_input(const char* message){
-   char *str;
-   str = remove_prefix(message, "input=");
-   url_decode(str);
-   return str;
+void get_input(char* message){
+   remove_prefix(message, "input=");
+   url_decode(message);
 }
 
 char* get_parse(const char* message, size_t sz, const char* symbol){

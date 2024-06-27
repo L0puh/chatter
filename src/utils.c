@@ -87,29 +87,15 @@ void print_usage(int argc){
    }
 }
 
-char* remove_prefix(const char* msg, const char* x){
-   int cnt = 0;
-   char* prefix = malloc(strlen(msg) * CHAR_BIT);
-   while (strcmp(prefix, x) != 0 && cnt < strlen(msg)){
-      if (msg[cnt] == '\n' || cnt+1 >= strlen(msg)) {
-         logger(x, "prefix isn't found");
-         return (char*) msg;
-      }
-      prefix[cnt] = msg[cnt];
-      cnt++;
-   } 
-   char* res = malloc((strlen(msg) - cnt)+1);
-   for(int i = cnt; i < strlen(msg); i++){
-      if (res[i] == '\t' || res[i] == '\n' || res[i] == EOF){
-         res[i]='\0';
-         return res;
-      }
-      res[i-cnt] = msg[i];
+void remove_prefix(char *str, const char* prefix){
+   char* p;
+   if ((p = strstr(str, prefix)) != NULL){
+      p+=strlen(prefix);
+      if (p) strcpy(str, p);
+   } else {
+      error(prefix, "prefix isn't found");
    }
-   res[(strlen(msg)-cnt)]='\0';
-   return res;
 }
-
 /************************************************/
 
 void logger(const char* where, char* what){

@@ -5,8 +5,8 @@
 
 struct state{
    int SERVER_RUNNING;
-   char buffer[MAXLEN];
-   char* current_page;
+   char* DEFAULT_PAGE;
+   
 };
 
 extern struct state GLOBAL;
