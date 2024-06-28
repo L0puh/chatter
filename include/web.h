@@ -21,7 +21,9 @@ simple http web server
 enum req_type_t{
    NONE,
    GET,
-   OK
+   POST,
+   OK,
+   NOT_FOUND,
 };
 
 typedef struct {
@@ -62,7 +64,8 @@ void init_server(int port, int *sockfd, struct sockaddr_in*, size_t);
 
 int get_type_request(char* message, size_t sz);
 void get_input(char* message);
-char* get_parse(const char* message, size_t sz, const char* symbol);
+char* header_parse(const char* message, size_t sz, const char* symbol);
+char* post_parse(const char* message, size_t sz, const char* symbol);
 char* get_str_addr(struct sockaddr_in addr);
 
 void* handle_client(void* user);

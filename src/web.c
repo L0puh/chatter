@@ -26,15 +26,10 @@ void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz)
 }
 
 int get_type_request(char* message, size_t sz){
-   char *s = malloc(MAXLEN);
-   for (int i = 0; i < sz; i++){
-      s[i] = message[i]; 
-      if (strcmp(s, "GET")){
-         return GET;
-      } else if (strcmp(s, "OK")){
-         return OK;
-      }
-   }
+   if (strstr(message, "GET") != NULL)
+      return GET;
+   if (strstr(message, "POST") != NULL)
+      return POST;
    return NONE;
 }
 
@@ -66,7 +61,14 @@ void get_input(char* message){
    url_decode(message);
 }
 
-char* get_parse(const char* message, size_t sz, const char* symbol){
+char* post_parse(const char* message, size_t sz, const char* symbol){
+   char *ptr, *res;
+   if ((ptr = strstr(message, symbol)) != NULL){
+      return ptr;
+   }
+   return "";
+}
+char* header_parse(const char* message, size_t sz, const char* symbol){
    char* token; int cur = 0;
    char* res = malloc(sz * CHAR_BIT);
    char* copy_msg = malloc(sz * CHAR_BIT);
