@@ -18,11 +18,20 @@ simple http web server
 #define QUERY 10
 #define MAXLEN 4096
 
-enum req_t {
+enum req_type_t{
    NONE,
    GET,
    OK
 };
+
+typedef struct {
+   int length;
+   int code;
+   char* header; 
+   char* content_type;
+   char* cookies;
+   char* content;
+} request_t;
 
 typedef struct {
    int sockfd;
@@ -38,7 +47,6 @@ static char* ERROR_PAGE = "error.html";
 static char* HEADER_PAGE = "header.html";
 static char* SENDER_PAGE = "sender.html";
 static char* DATABASE_FILE = "text.txt"; 
-static char* req_t_OK = "request_ok.txt";
 
 
 static char* available_routs[] = {
@@ -60,9 +68,10 @@ char* get_str_addr(struct sockaddr_in addr);
 void* handle_client(void* user);
 void handle_request(user_t user, char* buffer, int bytes);
 
+void free_request(request_t *req);
 void set_current_page(user_t *user, char *input);
 void url_decode(char* str);
-void send_request(user_t user, enum req_t type);
+void send_request(user_t user, enum req_type_t type);
 void recv_loop(int client_sockfd, char* buffer, int *bytes);
 
 #endif

@@ -92,7 +92,7 @@ void url_decode(char* str){
    char* p = str;
    while(*p){
       if (*p == '+'){
-         *str++ =' ';
+         *str++ = ' ';
          p++;
       } else if (*p == '%'){
          p++;

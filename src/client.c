@@ -35,7 +35,7 @@ void recv_loop(int client_sockfd, char* buffer, int *bytes){
 void write_input(char* buffer, size_t sz, char* data){
    char *input, *new, *format;
    format = "<p><span style=\"color:#b0716f\"> %s:\
-             </span><span>%s </span></p>";
+            </span><span>%s </span></p>";
 
    new = malloc(MAXLEN); 
    input = get_parse(buffer, sz, "?"); 
@@ -47,23 +47,36 @@ void write_input(char* buffer, size_t sz, char* data){
    free(new);
 }
 
-void send_request(user_t user, enum req_t type){
+void send_request(user_t user, enum req_type_t type){
+   char* format = "HTTP/1.1 %d %s\nContent-Type: %s\n\
+                   Set-Cookie: %s\nContent-Length:%d\n\n%s\n";
+   char* result; 
+   request_t req;
    size_t msg_sz = MAXLEN;
    int bytes_sent, total;
-   char *header, *message, *result;
 
    switch(type){
       case OK:
-         header = get_file_content(req_t_OK, 0);
+         req.header = "OK";
+         req.code = 200;
          break;
       default:
-         header = get_file_content(req_t_OK, 0);
+         error(__func__, "type of request isn't supported");
+         return;
 
    }
-   message = get_file_content(user.current_page, &msg_sz);
+
+   req.content = get_file_content(user.current_page, &msg_sz);
+   req.content_type = "text/html";
+   req.cookies = "test=123";
+   req.length = strlen(req.content);
+
    result = malloc(msg_sz + MAXLEN);
    
-   sprintf(result, "%s%lu\n\n%s", header, strlen(message), message);
+   sprintf(result, format, req.code, req.header, 
+           req.content_type, req.cookies, 
+           req.length, req.content);
+
    bytes_sent = 0, total = strlen(result);
    
    while (bytes_sent < total){
@@ -71,7 +84,7 @@ void send_request(user_t user, enum req_t type){
       ASSERT(bytes_sent);
    }
   
-   free(header); free(result); free(message); 
+   free(result);  
 }
 
 void handle_request(user_t user, char* buffer, int bytes){
@@ -97,6 +110,9 @@ void* handle_client(void* th_user){
    user_t user = *(user_t*)th_user;
    recv_loop(user.sockfd, buffer, &bytes); 
    buffer[bytes] = '\0';
+
+   printf("%s\n", buffer);
+   
    handle_request(user, buffer, bytes);
    send_request(user, OK);
    ASSERT(bytes);
