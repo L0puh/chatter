@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LOG_ON /*enable logging*/
 
 void update_html(){
    char* header = get_file_content(HEADER_PAGE, 0);
@@ -99,9 +100,13 @@ void remove_prefix(char *str, const char* prefix){
 /************************************************/
 
 void logger(const char* where, char* what){
+#ifdef LOG_ON
    printf("[+] LOG %s: %s\n", where, what);
+#endif
 }
 void error(const char* where, char* what){
+#ifdef LOG_ON
    printf("[-] ERROR %s: %s...", where, what);
    printf("%s\n", strerror(errno));
+#endif
 }

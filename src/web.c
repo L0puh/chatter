@@ -1,10 +1,10 @@
 #include "web.h"
 #include "utils.h"
+
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
@@ -112,4 +112,32 @@ void url_decode(char* str){
       } else *str++ = *p++;
    }
    *str='\0';
+}
+
+char* set_cookie(char* param, char* value){
+   char* cookie = malloc(MAXLEN);
+   sprintf(cookie, "%s=%s;", param, value);
+   return cookie;
+}
+
+void send_request(user_t user, request_t req){
+   char* format = "HTTP/1.1 %d %s\nSet-Cookie: %s; Secure; HttpOnly\n"
+                  "Content-Type: %s\nContent-Length:%d\n\n%s\n";
+
+   char* result; 
+   int bytes_sent, total;
+
+   result = malloc(req.length + MAXLEN);
+   sprintf(result, format, req.code, req.header, 
+           req.cookies, req.content_type, 
+           req.length, req.content);
+
+   bytes_sent = 0, total = strlen(result);
+   
+   while (bytes_sent < total){
+      bytes_sent = send(user.sockfd, result, strlen(result), 0);
+      ASSERT(bytes_sent);
+   }
+  
+   free(result);  
 }

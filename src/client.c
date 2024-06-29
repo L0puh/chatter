@@ -35,7 +35,7 @@ void recv_loop(int client_sockfd, char* buffer, int *bytes){
 void write_input(char* buffer, size_t sz, char* data){
    char *new, *format;
    format = "<p><span style=\"color:#b0716f\"> %s:\
-            </span><span>%s </span></p>";
+             </span><span>%s </span></p>";
 
    new = malloc(MAXLEN); 
    sprintf(new, format, data, buffer);
@@ -45,54 +45,9 @@ void write_input(char* buffer, size_t sz, char* data){
    free(new);
 }
 
-void send_request(user_t user, enum req_type_t type){
-   char* format = "HTTP/1.1 %d %s\nSet-Cookie: %s\n"
-                  "Content-Type: %s\nContent-Length:%d\n\n%s\n";
-
-   char* result; 
-   request_t req;
-   size_t msg_sz = MAXLEN;
-   int bytes_sent, total;
-
-   switch(type){
-      case OK:
-         req.header = "OK";
-         req.code = 200;
-         break;
-      case NOT_FOUND: 
-         req.header = "Not Found";
-         req.code = 404;
-         break;
-      default:
-         error(__func__, "type of request isn't supported");
-         return;
-
-   }
-
-   req.content = get_file_content(user.current_page, &msg_sz);
-   req.content_type = "text/html";
-   req.cookies = "test=423; Secure; HttpOnly";
-   req.length = strlen(req.content);
-
-   result = malloc(msg_sz + MAXLEN);
-   
-   sprintf(result, format, req.code, req.header, 
-           req.cookies, req.content_type, 
-           req.length, req.content);
-
-   bytes_sent = 0, total = strlen(result);
-   
-   while (bytes_sent < total){
-      bytes_sent = send(user.sockfd, result, strlen(result), 0);
-      ASSERT(bytes_sent);
-   }
-  
-   free(result);  
-}
-
 void handle_request(user_t user, char* buffer, int bytes){
    char* res;
-   enum req_type_t type = get_type_request(buffer, bytes);
+   reqtype_t type = get_type_request(buffer, bytes);
    
    if (bytes > 0 && type == POST){
       logger(__func__, "POST request");
@@ -117,15 +72,28 @@ void handle_request(user_t user, char* buffer, int bytes){
    }
 }
 
+
 void* handle_client(void* th_user){
-   char buffer[MAXLEN]; int bytes;
-   user_t user = *(user_t*)th_user;
+   int bytes;
+   user_t user;
+   request_t req;
+   char buffer[MAXLEN]; 
+
+   user = *(user_t*)th_user;
+
    recv_loop(user.sockfd, buffer, &bytes); 
    buffer[bytes] = '\0';
-   ASSERT(bytes);
 
    handle_request(user, buffer, bytes);
-   send_request(user, OK);
+
+   req.header = "OK";
+   req.code = 200;
+   req.content = get_file_content(user.current_page, 0);
+   req.content_type = "text/html";
+   req.cookies = set_cookie("test", "test");
+   req.length = strlen(req.content);
+
+   send_request(user, req);
    
    pthread_exit(0);
    return 0;

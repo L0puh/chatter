@@ -2,10 +2,7 @@
 #include "web.h"
 #include "state.h"
 
-#include <arpa/inet.h>
 #include <pthread.h>
-#include <netinet/in.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -25,7 +22,6 @@ int main(int argc, char* argv[]){
    
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
-      
       
       user.sockfd = client_sockfd;
       user.addr = get_str_addr(cliaddr);

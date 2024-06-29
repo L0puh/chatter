@@ -6,7 +6,6 @@
 
 #define ASSERT(res) { if (res < 0){ error((char*)__func__, strerror(errno)); }}
 #define LEN(arr) sizeof(arr)/sizeof(arr[0])
-#define DIR "resources"
 
 void print_usage(int argc);
 
