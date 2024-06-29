@@ -94,7 +94,8 @@ void* handle_client(void* th_user){
    req.length = strlen(req.content);
 
    send_request(user, req);
-   
+   free_request(&req);
+
    pthread_exit(0);
    return 0;
 }

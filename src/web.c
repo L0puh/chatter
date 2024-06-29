@@ -141,3 +141,8 @@ void send_request(user_t user, request_t req){
   
    free(result);  
 }
+
+void free_request(request_t *req){
+   free(req->cookies);
+   free(req->content);
+}

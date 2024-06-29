@@ -68,6 +68,7 @@ char* header_parse(const char* message, size_t sz, const char* symbol);
 char* post_parse(const char* message, size_t sz, const char* symbol);
 char* get_str_addr(struct sockaddr_in addr);
 char* set_cookie(char* param, char* value);
+void free_request(request_t *req);
 
 void* handle_client(void* user);
 void  handle_request(user_t user, char* buffer, int bytes);

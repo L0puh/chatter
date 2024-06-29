@@ -30,8 +30,6 @@ int main(int argc, char* argv[]){
       ASSERT(pthread_create(&ptr, NULL, handle_client, (void*)&user));
       ASSERT(pthread_detach(ptr));
    }
-
-   close(client_sockfd);
    close(sockfd);
    return 0;
 }
