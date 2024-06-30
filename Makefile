@@ -3,12 +3,12 @@ BUILD_DIR=build
 INCLUDE_DIR=include
 SOURCES=$(wildcard src/*c)
 OBJECTS=$(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
-FLAGS=-I$(INCLUDE_DIR)
+FLAGS=-I$(INCLUDE_DIR) -lcrypto -Wno-deprecated-declarations
 
-all: server
+all: server debug 
 debug: FLAGS += -DDEBUG -g
 
-$(BUILD_DIR)/%.o: src/%.c
+$(BUILD_DIR)/%.o: src/%.c 
 	mkdir -p $(BUILD_DIR)
 	$(CC) -c -o $@ $< $(FLAGS)
 
@@ -20,3 +20,5 @@ debug: $(OBJECTS)
 
 clean:
 	rm -rf $(BUILD_DIR)/* server debug
+
+

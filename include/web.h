@@ -23,6 +23,7 @@ typedef enum {
    GET,
    POST,
    OK,
+   WS,
    NOT_FOUND,
 } reqtype_t;
 
@@ -30,9 +31,11 @@ typedef struct {
    int length;
    int code;
    char* header; 
+   char* accept;
    char* content_type;
    char* cookies;
    char* content;
+   char* location;
 } request_t;
 
 typedef struct {
@@ -42,6 +45,8 @@ typedef struct {
 } user_t;
 
 /************************************************************/
+
+static char* WS_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 static char* CLEAR_COMMAND = "/clear.html";
 static char* INDEX_PAGE = "index.html";
@@ -71,12 +76,15 @@ char* set_cookie(char* param, char* value);
 void free_request(request_t *req);
 
 void* handle_client(void* user);
-void  handle_request(user_t user, char* buffer, int bytes);
+int handle_request(user_t *user, request_t *req, char* buffer, int bytes);
 
 void free_request(request_t *req);
 void set_current_page(user_t *user, char *input);
 void url_decode(char* str);
-void send_request(user_t user, request_t req);
+void send_response(user_t user, request_t req);
 void recv_loop(int client_sockfd, char* buffer, int *bytes);
+
+char* ws_key_parse(const char* buffer);
+char* ws_create_accept(const char* key);
 
 #endif

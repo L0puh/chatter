@@ -104,6 +104,7 @@ void logger(const char* where, char* what){
    printf("[+] LOG %s: %s\n", where, what);
 #endif
 }
+
 void error(const char* where, char* what){
 #ifdef LOG_ON
    printf("[-] ERROR %s: %s...", where, what);

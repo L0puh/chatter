@@ -19,4 +19,8 @@ void  write_to_file(const char* filename, char* input, char* mode);
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
 
+
+char*  base64_encode(const unsigned char* message, size_t size);
+size_t base64_encode_size(size_t strlen);
+
 #endif

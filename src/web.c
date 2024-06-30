@@ -120,17 +120,29 @@ char* set_cookie(char* param, char* value){
    return cookie;
 }
 
-void send_request(user_t user, request_t req){
-   char* format = "HTTP/1.1 %d %s\nSet-Cookie: %s; Secure; HttpOnly\n"
-                  "Content-Type: %s\nContent-Length:%d\n\n%s\n";
-
+void send_response(user_t user, request_t req){
+   char* format;
    char* result; 
    int bytes_sent, total;
-
    result = malloc(req.length + MAXLEN);
-   sprintf(result, format, req.code, req.header, 
-           req.cookies, req.content_type, 
-           req.length, req.content);
+   if (req.code == 200){
+       format = "HTTP/1.1 %d %s\nSet-Cookie: %s; Secure; HttpOnly\n"
+                     "Content-Type: %s\nContent-Length:%d\n\n%s\n";
+       sprintf(result, format, req.code, req.header, 
+               req.cookies, req.content_type, 
+               req.length, req.content);
+
+   }
+   else if (req.code == 301){
+       format = "HTTP/1.1 %d %s\nLocation: %s\n";
+       sprintf(result, format, req.code, req.header, req.location);
+       logger(__func__, "Moved Permanently response");
+   }
+   else if (req.code == 101){
+       format = "HTTP/1.1 %d %s\r\nUpgrade: websocket\r\n"
+               "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n";
+       sprintf(result, format, req.code, req.header, req.accept);
+   }
 
    bytes_sent = 0, total = strlen(result);
    
@@ -142,7 +154,3 @@ void send_request(user_t user, request_t req){
    free(result);  
 }
 
-void free_request(request_t *req){
-   free(req->cookies);
-   free(req->content);
-}

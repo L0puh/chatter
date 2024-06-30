@@ -3,7 +3,11 @@
 #include "state.h"
 
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+#include <openssl/sha.h>
+
 
 
 int main(int argc, char* argv[]){
@@ -12,12 +16,12 @@ int main(int argc, char* argv[]){
    socklen_t cliaddr_sz;
    int sockfd, client_sockfd;
    struct sockaddr_in servaddr, cliaddr;
-  
+   
    print_usage(argc);
+
    GLOBAL.SERVER_RUNNING = 1;
    GLOBAL.DEFAULT_PAGE = INDEX_PAGE;
    cliaddr_sz = sizeof(cliaddr); 
-   
    init_server(atoi(argv[1]), &sockfd, &servaddr, sizeof(servaddr));
    
    while(GLOBAL.SERVER_RUNNING){ 

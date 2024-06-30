@@ -45,31 +45,49 @@ void write_input(char* buffer, size_t sz, char* data){
    free(new);
 }
 
-void handle_request(user_t user, char* buffer, int bytes){
-   char* res;
+int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
+   char *res, *ws;
    reqtype_t type = get_type_request(buffer, bytes);
    
    if (bytes > 0 && type == POST){
       logger(__func__, "POST request");
-
+      
       res = post_parse(buffer, bytes, "input=");
       get_input(res);
-      write_input(res, strlen(res), user.addr);
+      write_input(res, strlen(res), user->addr);
 
    } else if (bytes > 0 && type == GET ){
-      logger(__func__, "GET request");
+      if (strstr(buffer, "Upgrade: websocket") != 0){
+         logger(__func__, "WebSocket request");
+         ws = malloc(128);
+         ws = ws_key_parse(buffer);
+         if (ws == NULL) 
+            error(__func__, "error in parsing WS key");
+         req->header = "Switching Protocols";
+         req->code = 101;
+         req->accept = ws_create_accept(ws);
+         return WS;
+      } 
       res = header_parse(buffer, bytes, " ");
       if (is_contain(res, '/')){
-         set_current_page(&user, res);
-       
-         /* FIXME: add database */
-         if (strcmp(res, CLEAR_COMMAND) == 0){
+         set_current_page(user, res);
+         
+         if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
             logger(__func__, "delete chat history");
             system("rm -f resources/text.txt && touch resources/text.txt"); 
             update_html();
          }
       }
    }
+
+   req->header = "OK";
+   req->code = 200;
+   req->content = get_file_content(user->current_page, 0);
+   req->content_type = "text/html";
+   req->cookies = set_cookie("test", "test");
+   req->length = strlen(req->content);
+
+   return OK;
 }
 
 
@@ -80,21 +98,12 @@ void* handle_client(void* th_user){
    char buffer[MAXLEN]; 
 
    user = *(user_t*)th_user;
-
    recv_loop(user.sockfd, buffer, &bytes); 
    buffer[bytes] = '\0';
+   printf("%s\n", buffer);
 
-   handle_request(user, buffer, bytes);
-
-   req.header = "OK";
-   req.code = 200;
-   req.content = get_file_content(user.current_page, 0);
-   req.content_type = "text/html";
-   req.cookies = set_cookie("test", "test");
-   req.length = strlen(req.content);
-
-   send_request(user, req);
-   free_request(&req);
+   handle_request(&user, &req, buffer, bytes);
+   send_response(user, req);
 
    pthread_exit(0);
    return 0;
