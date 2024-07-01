@@ -126,30 +126,25 @@ void send_response(user_t user, request_t req){
    int bytes_sent, total;
    result = malloc(req.length + MAXLEN);
    if (req.code == 200){
-       format = "HTTP/1.1 %d %s\nSet-Cookie: %s; Secure; HttpOnly\n"
-                     "Content-Type: %s\nContent-Length:%d\n\n%s\n";
+       format = "HTTP/1.1 %d %s\r\nSet-Cookie: %s; Secure; HttpOnly\r\n"
+                     "Content-Type: %s\r\nContent-Length:%d\r\n\r\n%s\r\n\r\n";
        sprintf(result, format, req.code, req.header, 
                req.cookies, req.content_type, 
                req.length, req.content);
 
    }
    else if (req.code == 301){
-       format = "HTTP/1.1 %d %s\nLocation: %s\n";
+       format = "HTTP/1.1 %d %s\r\nLocation: %s\r\n\r\n";
        sprintf(result, format, req.code, req.header, req.location);
        logger(__func__, "Moved Permanently response");
    }
    else if (req.code == 101){
-       format = "HTTP/1.1 %d %s\r\nUpgrade: websocket\r\n"
-               "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n";
-       sprintf(result, format, req.code, req.header, req.accept);
+      result = ws_create_upgrade(req);
    }
 
-   bytes_sent = 0, total = strlen(result);
    
-   while (bytes_sent < total){
-      bytes_sent = send(user.sockfd, result, strlen(result), 0);
-      ASSERT(bytes_sent);
-   }
+   bytes_sent = send(user.sockfd, result, strlen(result), 0);
+   ASSERT(bytes_sent);
   
    free(result);  
 }

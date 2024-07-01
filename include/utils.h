@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ASSERT(res) { if (res < 0){ error((char*)__func__, strerror(errno)); }}
+#define ASSERT(res) { if (res < 0){ errorl((char*)__func__, (char*) __FILE__, __LINE__); }}
 #define LEN(arr) sizeof(arr)/sizeof(arr[0])
 
 void print_usage(int argc);
@@ -18,6 +18,7 @@ void  write_to_file(const char* filename, char* input, char* mode);
 
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
+void errorl(const char* where, char* file, int line);
 
 
 char*  base64_encode(const unsigned char* message, size_t size);

@@ -40,7 +40,7 @@ void write_input(char* buffer, size_t sz, char* data){
    new = malloc(MAXLEN); 
    sprintf(new, format, data, buffer);
    write_to_file(DATABASE_FILE, new, "a");
-   update_html();
+   /* update_html(); */
 
    free(new);
 }
@@ -49,15 +49,16 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
    char *res, *ws;
    reqtype_t type = get_type_request(buffer, bytes);
    
-   if (bytes > 0 && type == POST){
+
+   if (bytes > 0 && type == POST && !user->is_WS){
       logger(__func__, "POST request");
       
       res = post_parse(buffer, bytes, "input=");
       get_input(res);
       write_input(res, strlen(res), user->addr);
 
-   } else if (bytes > 0 && type == GET ){
-      if (strstr(buffer, "Upgrade: websocket") != 0){
+   } else if (bytes > 0 && type == GET){
+      if (strstr(buffer, "Sec-WebSocket-Key") != 0){
          logger(__func__, "WebSocket request");
          ws = malloc(128);
          ws = ws_key_parse(buffer);
@@ -66,6 +67,7 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
          req->header = "Switching Protocols";
          req->code = 101;
          req->accept = ws_create_accept(ws);
+         user->is_WS = 1;
          return WS;
       } 
       res = header_parse(buffer, bytes, " ");
@@ -78,7 +80,7 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
             update_html();
          }
       }
-   }
+   } 
 
    req->header = "OK";
    req->code = 200;
@@ -98,13 +100,21 @@ void* handle_client(void* th_user){
    char buffer[MAXLEN]; 
 
    user = *(user_t*)th_user;
-   recv_loop(user.sockfd, buffer, &bytes); 
-   buffer[bytes] = '\0';
-   printf("%s\n", buffer);
+   user.is_WS = 0;
+   while ((bytes = recv(user.sockfd, buffer, sizeof(buffer), 0)) > 0){
+      buffer[bytes] = '\0';
+      handle_request(&user, &req, buffer, bytes);
+      if (user.is_WS){
+         char* ws_buffer = ws_decode(buffer);
+         if (ws_buffer != NULL)
+            printf("WS buffer: %s\n", ws_buffer);
 
-   handle_request(&user, &req, buffer, bytes);
-   send_response(user, req);
-
+         /* ws_send_response(); */
+      }
+      send_response(user, req);
+   }
+   ASSERT(bytes);
+   close(user.sockfd);
    pthread_exit(0);
    return 0;
 }

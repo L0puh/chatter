@@ -105,9 +105,16 @@ void logger(const char* where, char* what){
 #endif
 }
 
+void errorl(const char* where, char* file, int line){
+#ifdef LOG_ON
+    printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, strerror(errno));
+#endif
+}
 void error(const char* where, char* what){
 #ifdef LOG_ON
-   printf("[-] ERROR %s: %s...", where, what);
-   printf("%s\n", strerror(errno));
+   if (errno != 0)
+      printf("[-] ERROR: %s: %s - %s\n", where, what, strerror(errno));
+   else
+      printf("[-] INFO %s: %s\n", where, what);
 #endif
 }

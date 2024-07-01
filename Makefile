@@ -5,7 +5,7 @@ SOURCES=$(wildcard src/*c)
 OBJECTS=$(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 FLAGS=-I$(INCLUDE_DIR) -lcrypto -Wno-deprecated-declarations
 
-all: server debug 
+all: server
 debug: FLAGS += -DDEBUG -g
 
 $(BUILD_DIR)/%.o: src/%.c 

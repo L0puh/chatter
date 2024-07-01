@@ -16,7 +16,6 @@ int main(int argc, char* argv[]){
    socklen_t cliaddr_sz;
    int sockfd, client_sockfd;
    struct sockaddr_in servaddr, cliaddr;
-   
    print_usage(argc);
 
    GLOBAL.SERVER_RUNNING = 1;

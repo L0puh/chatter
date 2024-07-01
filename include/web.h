@@ -42,6 +42,7 @@ typedef struct {
    int sockfd;
    char* addr; 
    char* current_page;
+   int is_WS;
 } user_t;
 
 /************************************************************/
@@ -86,5 +87,7 @@ void recv_loop(int client_sockfd, char* buffer, int *bytes);
 
 char* ws_key_parse(const char* buffer);
 char* ws_create_accept(const char* key);
+char* ws_create_upgrade(const request_t req);
+char* ws_decode(char* buffer);
 
 #endif
