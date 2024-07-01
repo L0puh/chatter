@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "web.h"
 
+#include <netinet/in.h>
 #include <openssl/sha.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -48,19 +49,29 @@ char* ws_create_upgrade(const request_t req){
 }
 
 char* ws_recv_frame(char* buffer, int *res){
-   uint64_t msglen;
    uint16_t offset;
+   uint64_t msglen;
    uint8_t fin, mask, opcode;
-
-   fin  = (buffer[0] & 0x80) != 0;
-   mask = (buffer[1] & 0x80) != 0;
+   
+   fin    = (buffer[0] & 0x80) != 0;
    opcode = buffer[0] & 0x0F;
+   mask   = (buffer[1] & 0x80) != 0;
    msglen = (uint64_t) buffer[1] & 0x7F;
    
    if (!mask || fin == 0 || msglen == 0) 
       return NULL;
 
-   if (msglen < 126) offset = 2;
+   if (msglen <= 125){
+      offset = 2;
+   } else if (msglen == 126) {
+       memcpy(&msglen, &buffer[2], 2);
+       msglen = ntohs(msglen);
+       offset = 4;
+   } else {
+      error(__func__, "frame length exceeds");
+      return NULL;
+   }
+   printf("RECIEVED: %lu\n", msglen);
 
    switch(opcode){
       case 0x01:
@@ -89,12 +100,10 @@ char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
 
    for (int i = 0; i < msglen; ++i)
       decoded[i] = (uint8_t)(buffer[offset + i] ^ mask[i % 4]);
-
+   
    char *text = (char*) malloc(msglen + 1);
-
    for (int i = 0; i < msglen; ++i)
       text[i] = decoded[i];
-
    text[msglen] = '\0';
    
    return text;
