@@ -22,15 +22,6 @@ body {
 }
 </style>
 <body>
- <script>
-    var exampleSocket = new WebSocket("ws://localhost:8080");
-    exampleSocket.onopen = function (event) {
-      exampleSocket.send("MESSAGE FROM WEBSOCKET");
-    };
-    exampleSocket.onmessage = function (event) {
-      console.log(event.data);
-    }
-  </script>
-
+   <a href ="websocket.html"><input value = "WEBSOCKET" type="button"></a>
    <a href ="clear.html"><input value = "CLEAR" type="button"></a>
 

@@ -91,7 +91,8 @@ void print_usage(int argc){
 void remove_prefix(char *str, const char* prefix){
    char* p;
    if ((p = strstr(str, prefix)) != NULL){
-      p+=strlen(prefix);
+      p += strlen(prefix);
+      p[strlen(p)] = '\0';
       if (p) strcpy(str, p);
    } else {
       error(prefix, "prefix isn't found");

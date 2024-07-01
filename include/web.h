@@ -25,7 +25,9 @@ typedef enum {
    OK,
    WS,
    NOT_FOUND,
-} reqtype_t;
+   ERROR,
+   CLOSE
+} req_type;
 
 typedef struct {
    int length;
@@ -58,10 +60,10 @@ static char* DATABASE_FILE = "text.txt";
 static char* DIR = "resources";
 
 static char* available_routs[] = {
-   "index.html", 
    "",
    "/",
    "error.html",
+   "websocket.html",
 };
 
 /************************************************************/
@@ -88,6 +90,7 @@ void recv_loop(int client_sockfd, char* buffer, int *bytes);
 char* ws_key_parse(const char* buffer);
 char* ws_create_accept(const char* key);
 char* ws_create_upgrade(const request_t req);
-char* ws_decode(char* buffer);
+char* ws_recv_frame(char* buffer, int *res);
+char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset);
 
 #endif

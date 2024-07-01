@@ -47,38 +47,55 @@ char* ws_create_upgrade(const request_t req){
    return result;
 }
 
-char* ws_decode(char* buffer){
-    int i;
-    uint8_t fin, mask;
-    uint8_t opcode;
-    uint16_t offset = 2;
-    uint64_t msglen;
+char* ws_recv_frame(char* buffer, int *res){
+   uint64_t msglen;
+   uint16_t offset;
+   uint8_t fin, mask, opcode;
 
-    fin = (buffer[0] & 0x80)  != 0;
-    mask = (buffer[1] & 0x80) != 0;
-    opcode = buffer[0] & 0x0F;
-    msglen = (uint64_t)buffer[1] & 0x7F;
+   fin  = (buffer[0] & 0x80) != 0;
+   mask = (buffer[1] & 0x80) != 0;
+   opcode = buffer[0] & 0x0F;
+   msglen = (uint64_t) buffer[1] & 0x7F;
+   
+   if (!mask || fin == 0 || msglen == 0) 
+      return NULL;
 
-    if (mask && msglen < 126) {
-        uint8_t decoded[msglen];
-        uint8_t masks[4] = {   buffer[offset], 
-                               buffer[offset+1], 
-                               buffer[offset+2], 
-                               buffer[offset+3]  };
-        offset += 4;
-        for (i = 0; i < msglen; ++i)
-            decoded[i] = (uint8_t)(buffer[offset + i] ^ masks[i % 4]);
+   if (msglen < 126) offset = 2;
 
-        char *text = (char*)malloc(msglen + 1);
-       
-        for (i = 0; i < msglen; ++i)
-            text[i] = decoded[i];
-       
-        text[msglen] = '\0';
-        return text;
+   switch(opcode){
+      case 0x01:
+         *res = OK;
+         return ws_recv_text(buffer, msglen, offset);
+      case 0x08:
+         logger(__func__, "connection close");
+         *res = CLOSE;
+         return ws_recv_text(buffer, msglen, offset);
+      default:
+         *res = ERROR;
+         error(__func__, "WS: unsupported type");
+   }
 
-    } else if (!mask)
-        error(__func__, "mask bit not set");
+   return NULL;
+}
 
-    return NULL;
- }
+char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
+   uint8_t mask[4];
+   uint8_t decoded[msglen];
+   
+   mask[0] = buffer[offset++];
+   mask[1] = buffer[offset++];
+   mask[2] = buffer[offset++];
+   mask[3] = buffer[offset++];
+
+   for (int i = 0; i < msglen; ++i)
+      decoded[i] = (uint8_t)(buffer[offset + i] ^ mask[i % 4]);
+
+   char *text = (char*) malloc(msglen + 1);
+
+   for (int i = 0; i < msglen; ++i)
+      text[i] = decoded[i];
+
+   text[msglen] = '\0';
+   
+   return text;
+}
