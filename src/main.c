@@ -1,5 +1,6 @@
+#include "http.h"
 #include "utils.h"
-#include "web.h"
+#include "server.h"
 #include "state.h"
 
 #include <pthread.h>
@@ -7,7 +8,6 @@
 #include <stdlib.h>
 
 #include <openssl/sha.h>
-
 
 
 int main(int argc, char* argv[]){

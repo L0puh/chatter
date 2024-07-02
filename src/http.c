@@ -1,37 +1,11 @@
-#include "web.h"
+#include "http.h"
 #include "utils.h"
+#include "websocket.h"
 
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
-void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
-   char message[32]; int enable = 1;
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
-   logger((char*)__func__, message);
-
-   ASSERT((*sockfd = socket(AF_INET, SOCK_STREAM, 0)));
-   ASSERT(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
-   bzero(servaddr, sz);
-   servaddr->sin_port = htons(port);
-   servaddr->sin_family = AF_INET;
-   servaddr->sin_addr.s_addr = INADDR_ANY; 
-
-   ASSERT(bind(*sockfd, (const struct sockaddr*)servaddr, sz));
-   ASSERT(listen(*sockfd, QUERY));
-   
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
-}
-
-int get_type_request(char* message, size_t sz){
-   if (strstr(message, "GET") != NULL)
-      return GET;
-   if (strstr(message, "POST") != NULL)
-      return POST;
-   return NONE;
-}
 
 char* get_str_addr(struct sockaddr_in addr){
    char* str_addr = malloc(INET_ADDRSTRLEN+1); 
@@ -40,25 +14,19 @@ char* get_str_addr(struct sockaddr_in addr){
    return str_addr;
 }
 
-char* get_sentence(char* str) {
-   int cur = 1, total_len = 0;
-   char* token = strtok(str, "+");
-   
-   char *res = malloc((MAXLEN+1) * CHAR_BIT);
-   bzero(res, strlen(res));
 
-   while (token != NULL && cur < MAXLEN && total_len < MAXLEN){
-      strcat(res, token);
-      strcat(res, " ");
-      total_len += strlen(token) + 1;
-      token = strtok(NULL, "+");
-   }
-   res[total_len] = '\0';
-   return str;
+void recv_loop(int client_sockfd, char* buffer, int *bytes){
+   while ((*bytes = recv(client_sockfd, 
+                        buffer, MAXLEN, 0)) <= 0){}
+   ASSERT(bytes);
 }
-void get_input(char* message){
-   remove_prefix(message, "input=");
-   url_decode(message);
+
+int get_type_request(char* message, size_t sz){
+   if (strstr(message, "GET") != NULL)
+      return GET;
+   if (strstr(message, "POST") != NULL)
+      return POST;
+   return NONE;
 }
 
 char* post_parse(const char* message, size_t sz, const char* symbol){

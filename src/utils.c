@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "web.h"
+#include "state.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -98,6 +98,19 @@ void remove_prefix(char *str, const char* prefix){
       error(prefix, "prefix isn't found");
    }
 }
+
+void write_input(char* buffer, size_t sz, char* data){
+   char *new, *format;
+   format = "<p><span style=\"color:#b0716f\"> %s:\
+             </span><span>%s </span></p>";
+
+   new = malloc(MAXLEN);
+   sprintf(new, format, data, buffer);
+   write_to_file(DATABASE_FILE, new, "a");
+   update_html();
+   free(new);
+}
+
 /************************************************/
 
 void logger(const char* where, char* what){

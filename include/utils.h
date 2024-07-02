@@ -15,6 +15,7 @@ void remove_prefix(char* str, const char* prefix);
 void  update_html();
 char* get_file_content(const char* filename, size_t *init_size);
 void  write_to_file(const char* filename, char* input, char* mode);
+void write_input(char* buffer, size_t sz, char* data);
 
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
