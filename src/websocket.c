@@ -74,10 +74,10 @@ char* ws_recv_frame(char* buffer, int *res){
    }
 
    switch(opcode){
-      case 0x01:
+      case WS_TEXT:
          *res = OK;
          return ws_recv_text(buffer, msglen, offset);
-      case 0x08:
+      case WS_CLOSE:
          logger(__func__, "connection close");
          *res = CLOSE;
          return ws_recv_text(buffer, msglen, offset);
@@ -109,28 +109,38 @@ char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
    return text;
 }
 
-void ws_send_response(user_t user, char* message, unsigned short msglen){
+void ws_send_response(user_t user, ws_frame_t frame){
    int bytes, offset;
    char buffer[MAXLEN];
-   uint8_t opcode = 0x01; 
    
    bzero(buffer, MAXLEN);
-   buffer[0] = 0x80 | opcode; 
- 
-   if (msglen < 126) {
-      buffer[1] = (char)msglen;
-      offset = 2;
-   } else if (msglen < MAXLEN) {
-      buffer[1] = 0x7E; 
-      buffer[2] = (msglen >> 8) & 0xFF;
-      buffer[3] =  msglen & 0xFF;
-      offset = 4;
-   } else {
-      error(__func__, "buffer length exceeds");
-      return;
+   buffer[0] = FIN | frame.opcode;
+   
+   switch(frame.opcode){
+      case WS_TEXT:
+         if (frame.payload_len < 126) {
+            buffer[1] = (char)frame.payload_len;
+            offset = 2;
+         } else if (frame.payload_len < MAXLEN) {
+            buffer[1] = 0x7E; 
+            buffer[2] = (frame.payload_len>> 8) & 0xFF;
+            buffer[3] =  frame.payload_len& 0xFF;
+            offset = 4;
+         } else {
+            error(__func__, "buffer length exceeds");
+            return;
+         }
+         memcpy(buffer+offset, frame.data, frame.payload_len);
+         buffer[frame.payload_len+offset] = '\0';
+         break;
+      case WS_CLOSE:
+         buffer[1] = (char)frame.payload_len;
+         offset=2;
+         break;
+      default:
+         error(__func__, "unsupported type");
+         return;
    }
-   memcpy(buffer+offset, message, strlen(message));
-   buffer[msglen+offset] = '\0';
-   bytes = send(user.sockfd, buffer, msglen+offset, 0);
+   bytes = send(user.sockfd, buffer, frame.payload_len+offset, 0);
    ASSERT(bytes);
 }

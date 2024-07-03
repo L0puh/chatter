@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <openssl/sha.h>
-
-
 int main(int argc, char* argv[]){
    user_t user;
    pthread_t ptr;

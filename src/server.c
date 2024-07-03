@@ -96,6 +96,7 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
 void* handle_client(void* th_user){
    user_t user;
    request_t req;
+   ws_frame_t frame;
    int bytes, res;
    char buffer[MAXLEN]; 
 
@@ -108,9 +109,18 @@ void* handle_client(void* th_user){
       if (user.is_WS == 1){
          char* ws_buffer = ws_recv_frame(buffer, &res);
          if (ws_buffer != NULL && res != ERROR && res != CLOSE){
-            ws_send_response(user, ws_buffer, strlen(buffer));
+            frame.opcode = WS_TEXT;
+            frame.payload_len = strlen(ws_buffer);
+            frame.data = ws_buffer;
+            ws_send_response(user, frame);
          }
-         else if (res == CLOSE) user.is_WS = 0;
+         else if (res == CLOSE) {
+            user.is_WS = 0;
+            frame.opcode = WS_CLOSE;
+            frame.payload_len = 0;
+            frame.data = NULL;
+            ws_send_response(user, frame);
+         }
       }
       if (res == WS || user.is_WS == 0)
          send_response(user, req);
