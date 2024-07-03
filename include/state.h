@@ -23,6 +23,7 @@ typedef enum {
 } req_type;
 
 typedef struct {
+
    int length;
    int code;
    char* header; 
@@ -31,18 +32,20 @@ typedef struct {
    char* cookies;
    char* content;
    char* location;
+
 } request_t;
 
 typedef struct {
+  
    int sockfd;
    char* addr; 
    char* current_page;
    int is_WS;
+
 } user_t;
 
 /************************************************************/
 
-static char* WS_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 static char* CLEAR_COMMAND = "/clear.html";
 static char* INDEX_PAGE = "index.html";

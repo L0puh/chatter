@@ -1,10 +1,3 @@
-/**********************
- 
-library which provides 
-simple http web server
-
-***********************/
-
 #ifndef WEB_H
 #define WEB_H
 

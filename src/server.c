@@ -107,11 +107,10 @@ void* handle_client(void* th_user){
       
       if (user.is_WS == 1){
          char* ws_buffer = ws_recv_frame(buffer, &res);
-         if (ws_buffer != NULL && res != ERROR && res != CLOSE)
-            logger("WS buffer", ws_buffer);
-
+         if (ws_buffer != NULL && res != ERROR && res != CLOSE){
+            ws_send_response(user, ws_buffer, strlen(buffer));
+         }
          else if (res == CLOSE) user.is_WS = 0;
-         /*TODO: ws_send_response(); */
       }
       if (res == WS || user.is_WS == 0)
          send_response(user, req);

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 char* ws_key_parse(const char* buffer){
    char *p, *token, *res = malloc(128);
@@ -106,4 +107,30 @@ char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
    text[msglen] = '\0';
    
    return text;
+}
+
+void ws_send_response(user_t user, char* message, unsigned short msglen){
+   int bytes, offset;
+   char buffer[MAXLEN];
+   uint8_t opcode = 0x01; 
+   
+   bzero(buffer, MAXLEN);
+   buffer[0] = 0x80 | opcode; 
+ 
+   if (msglen < 126) {
+      buffer[1] = (char)msglen;
+      offset = 2;
+   } else if (msglen < MAXLEN) {
+      buffer[1] = 0x7E; 
+      buffer[2] = (msglen >> 8) & 0xFF;
+      buffer[3] =  msglen & 0xFF;
+      offset = 4;
+   } else {
+      error(__func__, "buffer length exceeds");
+      return;
+   }
+   memcpy(buffer+offset, message, strlen(message));
+   buffer[msglen+offset] = '\0';
+   bytes = send(user.sockfd, buffer, msglen+offset, 0);
+   ASSERT(bytes);
 }
