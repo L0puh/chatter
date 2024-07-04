@@ -109,26 +109,27 @@ char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
    return text;
 }
 
-void ws_send_response(user_t user, ws_frame_t frame){
+char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
    int bytes, offset;
-   char buffer[MAXLEN];
+   char* buffer = malloc(MAXLEN);
    
    bzero(buffer, MAXLEN);
    buffer[0] = FIN | frame.opcode;
+   *res_size = 0;
    
    switch(frame.opcode){
       case WS_TEXT:
          if (frame.payload_len < 126) {
             buffer[1] = (char)frame.payload_len;
             offset = 2;
-         } else if (frame.payload_len < MAXLEN) {
+         } else if (frame.payload_len < 10) {
             buffer[1] = 0x7E; 
             buffer[2] = (frame.payload_len>> 8) & 0xFF;
             buffer[3] =  frame.payload_len& 0xFF;
             offset = 4;
          } else {
             error(__func__, "buffer length exceeds");
-            return;
+            return NULL;
          }
          memcpy(buffer+offset, frame.data, frame.payload_len);
          buffer[frame.payload_len+offset] = '\0';
@@ -139,8 +140,17 @@ void ws_send_response(user_t user, ws_frame_t frame){
          break;
       default:
          error(__func__, "unsupported type");
-         return;
+         return NULL;
    }
-   bytes = send(user.sockfd, buffer, frame.payload_len+offset, 0);
-   ASSERT(bytes);
+   *res_size = frame.payload_len + offset;
+   return buffer;
+}
+void ws_send_broadcast(char* buffer, uint64_t buffer_sz){
+   for (int i = 0; i < GLOBAL.connections_size; i++){
+      ws_send(GLOBAL.connections[i], buffer, buffer_sz);
+   }
+}
+void ws_send(user_t user, char* buffer, uint64_t buffer_sz){
+   if (user.sockfd != -1)
+      ASSERT(send(user.sockfd, buffer, buffer_sz, 0));
 }

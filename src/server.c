@@ -96,30 +96,33 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
 void* handle_client(void* th_user){
    user_t user;
    request_t req;
-   ws_frame_t frame;
    int bytes, res;
-   char buffer[MAXLEN]; 
+   ws_frame_t frame;
+   uint64_t buffer_sz;
+   char buffer[MAXLEN];
 
    user = *(user_t*)th_user;
    user.is_WS = 0;
    while ((bytes = recv(user.sockfd, buffer, sizeof(buffer), 0)) > 0){
       buffer[bytes] = '\0';
       res = handle_request(&user, &req, buffer, bytes);
-      
       if (user.is_WS == 1){
          char* ws_buffer = ws_recv_frame(buffer, &res);
          if (ws_buffer != NULL && res != ERROR && res != CLOSE){
             frame.opcode = WS_TEXT;
             frame.payload_len = strlen(ws_buffer);
             frame.data = ws_buffer;
-            ws_send_response(user, frame);
+            char* res = ws_get_frame(frame, &buffer_sz);
+            if (res != NULL && buffer_sz > 0)
+               ws_send_broadcast(res, buffer_sz);
          }
          else if (res == CLOSE) {
             user.is_WS = 0;
             frame.opcode = WS_CLOSE;
             frame.payload_len = 0;
             frame.data = NULL;
-            ws_send_response(user, frame);
+            char* res = ws_get_frame(frame, &buffer_sz);
+            ws_send_broadcast(res, buffer_sz);
          }
       }
       if (res == WS || user.is_WS == 0)

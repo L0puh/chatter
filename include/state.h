@@ -4,10 +4,6 @@
 #define QUERY 10
 #define MAXLEN 4096
 
-struct state{
-   int SERVER_RUNNING;
-   char* DEFAULT_PAGE;
-};
 
 extern struct state GLOBAL;
 
@@ -36,13 +32,22 @@ typedef struct {
 } request_t;
 
 typedef struct {
-  
+ 
+   int id;
    int sockfd;
+   int is_WS;
+   
    char* addr; 
    char* current_page;
-   int is_WS;
 
 } user_t;
+
+struct state{
+   int SERVER_RUNNING;
+   char* DEFAULT_PAGE;
+   int connections_size;
+   user_t connections[QUERY];
+};
 
 /************************************************************/
 

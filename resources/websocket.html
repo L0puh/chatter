@@ -47,7 +47,7 @@ body {
     };
 
     websocket.onmessage = (e) => {
-      writeToScreen(`<span>RESPONSE: ${e.data}</span>`);
+      writeToScreen(`<span>${e.data}</span>`);
     };
 
     websocket.onerror = (e) => {
@@ -55,7 +55,6 @@ body {
     };
 
     function doSend(message) {
-      writeToScreen(`SENT: ${message}`);
       websocket.send(message);
     }
 
