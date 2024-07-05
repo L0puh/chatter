@@ -4,6 +4,7 @@
 #define QUERY 10
 #define MAXLEN 4096
 
+#include <pthread.h>
 
 extern struct state GLOBAL;
 
@@ -31,11 +32,14 @@ typedef struct {
 
 } request_t;
 
+
 typedef struct {
  
-   int id;
    int sockfd;
-   int is_WS;
+   
+   int is_ws;
+   int ws_id;
+   int ws_state;
    
    char* addr; 
    char* current_page;
@@ -46,7 +50,8 @@ struct state{
    int SERVER_RUNNING;
    char* DEFAULT_PAGE;
    int connections_size;
-   user_t connections[QUERY];
+   user_t* connections[QUERY];
+   pthread_mutex_t mutex;
 };
 
 /************************************************************/

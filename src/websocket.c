@@ -3,6 +3,7 @@
 
 #include <netinet/in.h>
 #include <openssl/sha.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,10 +148,24 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
 }
 void ws_send_broadcast(char* buffer, uint64_t buffer_sz){
    for (int i = 0; i < GLOBAL.connections_size; i++){
-      ws_send(GLOBAL.connections[i], buffer, buffer_sz);
+      user_t user = *GLOBAL.connections[i];
+      if (user.is_ws && user.ws_state != WS_CLOSE) 
+         ws_send(user, buffer, buffer_sz);
    }
 }
 void ws_send(user_t user, char* buffer, uint64_t buffer_sz){
+   pthread_mutex_lock(&GLOBAL.mutex);
    if (user.sockfd != -1)
       ASSERT(send(user.sockfd, buffer, buffer_sz, 0));
+   pthread_mutex_unlock(&GLOBAL.mutex);
+}
+
+void ws_send_close(){
+   uint64_t buffer_sz;
+   ws_frame_t frame;
+   frame.opcode = WS_CLOSE;
+   frame.payload_len = 0;
+   frame.data = NULL;
+   char* res = ws_get_frame(frame, &buffer_sz);
+   ws_send_broadcast(res, buffer_sz);
 }

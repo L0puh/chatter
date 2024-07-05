@@ -110,7 +110,6 @@ void send_response(user_t user, request_t req){
       result = ws_create_upgrade(req);
    }
 
-   
    bytes_sent = send(user.sockfd, result, strlen(result), 0);
    ASSERT(bytes_sent);
   

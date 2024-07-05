@@ -49,7 +49,7 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
    req_type type = get_type_request(buffer, bytes);
    
 
-   if (bytes > 0 && type == POST && !user->is_WS){
+   if (bytes > 0 && type == POST && !user->is_ws){
       logger(__func__, "POST request");
       
       res = post_parse(buffer, bytes, "input=");
@@ -67,7 +67,13 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
          req->header = "Switching Protocols";
          req->code = 101;
          req->accept = ws_create_accept(ws);
-         user->is_WS = 1;
+         user->is_ws = 1;
+         user->ws_id = GLOBAL.connections_size;
+         user->ws_state = WS_TEXT;
+         pthread_mutex_lock(&GLOBAL.mutex);
+         if (GLOBAL.connections_size+1 < QUERY)
+            GLOBAL.connections[GLOBAL.connections_size++] = user;
+         pthread_mutex_unlock(&GLOBAL.mutex);
          return WS;
       } 
       res = header_parse(buffer, bytes, " ");
@@ -93,39 +99,41 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
 }
 
 
-void* handle_client(void* th_user){
-   user_t user;
-   request_t req;
-   int bytes, res;
+void handle_ws(user_t *user, char* buffer, int bytes){
+   int res;
    ws_frame_t frame;
    uint64_t buffer_sz;
+
+   char* ws_buffer = ws_recv_frame(buffer, &res);
+   if (ws_buffer != NULL && res != ERROR && res != CLOSE){
+
+      frame.opcode = WS_TEXT;
+      frame.payload_len = strlen(ws_buffer);
+      frame.data = ws_buffer;
+      char* res = ws_get_frame(frame, &buffer_sz);
+      
+      if (res != NULL && buffer_sz > 0)
+         ws_send_broadcast(res, buffer_sz);
+   }
+   else if (res == CLOSE) {
+      user->is_ws = 0;
+      user->ws_state = WS_CLOSE;
+   }
+}
+
+void* handle_client(void* th_user){
+   user_t user; 
+   request_t req;
+   int bytes, res;
    char buffer[MAXLEN];
 
    user = *(user_t*)th_user;
-   user.is_WS = 0;
    while ((bytes = recv(user.sockfd, buffer, sizeof(buffer), 0)) > 0){
       buffer[bytes] = '\0';
+     
       res = handle_request(&user, &req, buffer, bytes);
-      if (user.is_WS == 1){
-         char* ws_buffer = ws_recv_frame(buffer, &res);
-         if (ws_buffer != NULL && res != ERROR && res != CLOSE){
-            frame.opcode = WS_TEXT;
-            frame.payload_len = strlen(ws_buffer);
-            frame.data = ws_buffer;
-            char* res = ws_get_frame(frame, &buffer_sz);
-            if (res != NULL && buffer_sz > 0)
-               ws_send_broadcast(res, buffer_sz);
-         }
-         else if (res == CLOSE) {
-            user.is_WS = 0;
-            frame.opcode = WS_CLOSE;
-            frame.payload_len = 0;
-            frame.data = NULL;
-            char* res = ws_get_frame(frame, &buffer_sz);
-            ws_send_broadcast(res, buffer_sz);
-         }
-      }
-      if (res == WS || user.is_WS == 0)
+      if (user.is_ws == 1) handle_ws(&user, buffer, bytes);
+      if (res == WS || user.is_ws == 0)
          send_response(user, req);
    }
    ASSERT(bytes);
