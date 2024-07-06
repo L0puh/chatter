@@ -123,7 +123,7 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
          if (frame.payload_len < 126) {
             buffer[1] = (char)frame.payload_len;
             offset = 2;
-         } else if (frame.payload_len < 10) {
+         } else if (frame.payload_len < 65536) {
             buffer[1] = 0x7E; 
             buffer[2] = (frame.payload_len>> 8) & 0xFF;
             buffer[3] =  frame.payload_len& 0xFF;

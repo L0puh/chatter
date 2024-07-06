@@ -3,9 +3,11 @@
 #include "utils.h"
 #include "websocket.h"
 
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct state GLOBAL;
 
@@ -44,6 +46,17 @@ void set_current_page(user_t *user, char* res){
    return;
 }
 
+int is_connection_exists(user_t *user){
+   for (int i = 0; i < GLOBAL.connections_size; i++){
+      user_t *u = GLOBAL.connections[i];
+      if (strcmp(u->addr, user->addr) == 0 && u->port == user->port){
+         u = user;
+         return 1;
+      }
+   }
+   return 0;
+}
+
 int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
    char *res, *ws;
    req_type type = get_type_request(buffer, bytes);
@@ -68,12 +81,14 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
          req->code = 101;
          req->accept = ws_create_accept(ws);
          user->is_ws = 1;
-         user->ws_id = GLOBAL.connections_size;
          user->ws_state = WS_TEXT;
-         pthread_mutex_lock(&GLOBAL.mutex);
-         if (GLOBAL.connections_size+1 < QUERY)
-            GLOBAL.connections[GLOBAL.connections_size++] = user;
-         pthread_mutex_unlock(&GLOBAL.mutex);
+         if (!is_connection_exists(user)){
+            user->ws_id = GLOBAL.connections_size;
+            pthread_mutex_lock(&GLOBAL.mutex);
+            if (GLOBAL.connections_size+1 < QUERY)
+               GLOBAL.connections[GLOBAL.connections_size++] = user;
+            pthread_mutex_unlock(&GLOBAL.mutex);
+         }
          return WS;
       } 
       res = header_parse(buffer, bytes, " ");
@@ -101,23 +116,32 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
 
 void handle_ws(user_t *user, char* buffer, int bytes){
    int res;
-   ws_frame_t frame;
+   char* message;
    uint64_t buffer_sz;
+   ws_frame_t frame;
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
    if (ws_buffer != NULL && res != ERROR && res != CLOSE){
-
+    
+      int len = strlen(ws_buffer) + strlen(user->addr) + sizeof(user->port) + 2;
+      message = malloc((len*sizeof(char)) + 1); 
+      message[len*sizeof(char)] = '\0';
+      sprintf(message, "%s:%d|%s", user->addr, user->port, ws_buffer);
+     
       frame.opcode = WS_TEXT;
-      frame.payload_len = strlen(ws_buffer);
-      frame.data = ws_buffer;
-      char* res = ws_get_frame(frame, &buffer_sz);
+      frame.payload_len = len * sizeof(char);
       
+      strcpy(frame.data, message);
+      char* res = ws_get_frame(frame, &buffer_sz);
       if (res != NULL && buffer_sz > 0)
          ws_send_broadcast(res, buffer_sz);
+      free(message);
    }
    else if (res == CLOSE) {
+   pthread_mutex_lock(&GLOBAL.mutex);
       user->is_ws = 0;
       user->ws_state = WS_CLOSE;
+   pthread_mutex_unlock(&GLOBAL.mutex);
    }
 }
 

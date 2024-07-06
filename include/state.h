@@ -40,7 +40,8 @@ typedef struct {
    int is_ws;
    int ws_id;
    int ws_state;
-   
+   int port;
+
    char* addr; 
    char* current_page;
 
