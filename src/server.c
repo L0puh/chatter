@@ -31,6 +31,7 @@ void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz)
 
 
 void set_current_page(user_t *user, char* res){
+   if (strcmp(res, "/favicon.ico") == 0) return;
    if (strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0){
       user->current_page = INDEX_PAGE;
       return;
@@ -107,7 +108,7 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
    req->code = 200;
    req->content = get_file_content(user->current_page, 0);
    req->content_type = "text/html";
-   req->cookies = set_cookie("test", "test");
+   req->cookies = set_cookie("test", "cookie");
    req->length = strlen(req->content);
 
    return OK;
@@ -123,8 +124,8 @@ void handle_ws(user_t *user, char* buffer, int bytes){
    char* ws_buffer = ws_recv_frame(buffer, &res);
    if (ws_buffer != NULL && res != ERROR && res != CLOSE){
     
-      int len = strlen(ws_buffer) + strlen(user->addr) + sizeof(user->port) + 2;
-      message = malloc((len*sizeof(char)) + 1); 
+      int len = strlen(ws_buffer) + strlen(user->addr) + sizeof(user->port) + 3;
+      message = malloc(len*sizeof(char)); 
       message[len*sizeof(char)] = '\0';
       sprintf(message, "%s:%d|%s", user->addr, user->port, ws_buffer);
      
@@ -154,8 +155,9 @@ void* handle_client(void* th_user){
    user = *(user_t*)th_user;
    while ((bytes = recv(user.sockfd, buffer, sizeof(buffer), 0)) > 0){
       buffer[bytes] = '\0';
-     
+      
       res = handle_request(&user, &req, buffer, bytes);
+      
       if (user.is_ws == 1) handle_ws(&user, buffer, bytes);
       if (res == WS || user.is_ws == 0)
          send_response(user, req);

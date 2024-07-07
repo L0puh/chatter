@@ -66,7 +66,8 @@ button {
 
     websocket.onmessage = (e) => {
        const i = e.data.indexOf('|');
-       const [name, text] = [e.data.slice(0,i).trim(), e.data.slice(i+1).trim()];
+       console.log(e.data);
+       const [name, text] = [e.data.slice(0,i), e.data.slice(i+1)];
        writeToScreen(`<span style="color:red"><${name}></span><span> ${text}<span>`);
     };
 

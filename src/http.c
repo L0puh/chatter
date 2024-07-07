@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 char* get_str_addr(struct sockaddr_in addr){
    char* str_addr = malloc(INET_ADDRSTRLEN+1); 
@@ -88,13 +89,29 @@ char* set_cookie(char* param, char* value){
    return cookie;
 }
 
+char* cookies_parse(char *buffer, char* key){
+   size_t len;
+   char *p, *token, *res;
+   if ((p = strstr(buffer, "Cookie:")) != NULL && (p = strstr(p, key)) != NULL){
+      token = strtok(p, "=");
+      token = strtok(NULL, "="); 
+      token = strtok(token, "\r");
+      len = sizeof(char) * strlen(token);
+      res = malloc(len + 1);
+      strcpy(res, token);
+      res[len] = '\0';
+      return res;
+   }
+   return NULL;
+}
+
 void send_response(user_t user, request_t req){
    char* format;
    char* result; 
    int bytes_sent, total;
    result = malloc(req.length + MAXLEN);
    if (req.code == 200){
-       format = "HTTP/1.1 %d %s\r\nSet-Cookie: %s; Secure; HttpOnly\r\n"
+       format = "HTTP/1.1 %d %s\r\nSet-Cookie: %s HttpOnly\r\n"
                      "Content-Type: %s\r\nContent-Length:%d\r\n\r\n%s\r\n\r\n";
        sprintf(result, format, req.code, req.header, 
                req.cookies, req.content_type, 
