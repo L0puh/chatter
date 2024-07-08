@@ -35,7 +35,7 @@ char* post_parse(const char* message, size_t sz, const char* symbol){
    if ((ptr = strstr(message, symbol)) != NULL){
       return ptr;
    }
-   return "";
+   return NULL;
 }
 char* header_parse(const char* message, size_t sz, const char* symbol){
    char* token; int cur = 0;

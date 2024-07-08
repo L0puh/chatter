@@ -154,10 +154,12 @@ void ws_send_broadcast(char* buffer, uint64_t buffer_sz){
    }
 }
 void ws_send(user_t user, char* buffer, uint64_t buffer_sz){
-   pthread_mutex_lock(&GLOBAL.mutex);
-   if (user.sockfd != -1)
+   if (user.sockfd != -1){
+      pthread_mutex_lock(&GLOBAL.mutex);
       ASSERT(send(user.sockfd, buffer, buffer_sz, 0));
-   pthread_mutex_unlock(&GLOBAL.mutex);
+      pthread_mutex_unlock(&GLOBAL.mutex);
+   } else 
+      error(__func__, "invalid socket");
 }
 
 void ws_send_close(){
@@ -168,4 +170,19 @@ void ws_send_close(){
    frame.data = NULL;
    char* res = ws_get_frame(frame, &buffer_sz);
    ws_send_broadcast(res, buffer_sz);
+}
+
+
+int  ws_parse_message(char* ws_buffer){
+   char* p, *text = "TEXT: ", *name = "NAME: ";
+   if ((p = strstr(ws_buffer, text)) != NULL){
+      p+=strlen(text);
+      strcpy(ws_buffer, p);
+      return WS_TEXT;
+   } else if ((p = strstr(ws_buffer, name)) != NULL){
+      p+=strlen(name);
+      strcpy(ws_buffer, p);
+      return NAME;
+   }
+   return NONE;
 }

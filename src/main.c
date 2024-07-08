@@ -7,9 +7,10 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char* argv[]){
-   user_t user;
+   user_t *user;
    pthread_t ptr;
    socklen_t cliaddr_sz;
    int sockfd, client_sockfd;
@@ -28,14 +29,16 @@ int main(int argc, char* argv[]){
   
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
-     
-      user.addr = get_str_addr(cliaddr);
-      user.port = ntohs(cliaddr.sin_port);
-      user.sockfd = client_sockfd;
-      user.current_page = GLOBAL.DEFAULT_PAGE;
-      user.is_ws = 0;
 
-      ASSERT(pthread_create(&ptr, NULL, handle_client, (void*)&user));
+      user = malloc(sizeof(user_t));
+      user->addr = get_str_addr(cliaddr);
+      user->port = ntohs(cliaddr.sin_port);
+      user->sockfd = client_sockfd;
+      user->current_page = GLOBAL.DEFAULT_PAGE;
+      user->is_ws = 0;
+      user->username = user->addr;
+
+      ASSERT(pthread_create(&ptr, NULL, handle_client, (void*)user));
       ASSERT(pthread_detach(ptr));
    }
    close(sockfd);

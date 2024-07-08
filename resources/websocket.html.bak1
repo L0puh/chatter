@@ -30,7 +30,7 @@ textarea {
    margin-left: -100px;
    position: fixed;
 }
-#send_button {
+button {
    position: fixed;
    height: 40px;
    top: 100%;
@@ -43,25 +43,18 @@ textarea {
 <body>
    <a href ="/"><input value = "INDEX" type="button"></a>
    <h2>WebSocket</h2>
-    <textarea id = "message_field" cols="60" rows="6"></textarea>
-    <p>
-       <input  id="name_input" type="TEXT" placeholder="your name"></input>
-       <button id="name">ok</button>
-    </p>
-    <p><button id="send_button">SEND</button></p>
+    <textarea cols="60" rows="6"></textarea>
+    <p><button>send</button><p>
     <div id="output"></div>
   </body>
   <script>
-    const button = document.querySelector("#send_button");
+    const button = document.querySelector("button");
     const output = document.querySelector("#output");
-    const textarea = document.querySelector("#message_field");
-    const namearea = document.querySelector("#name_input");
-    const namebutton = document.querySelector("#name");
+    const textarea = document.querySelector("textarea");
     const wsUri = "ws://localhost:8080/";
     const websocket = new WebSocket(wsUri);
 
     button.addEventListener("click", onClickButton);
-    namebutton.addEventListener("click", onNameButton);
 
     websocket.onopen = (e) => {
        writeToScreen("<span class='log'>CONNECTED</span>");
@@ -72,10 +65,10 @@ textarea {
     };
 
     websocket.onmessage = (e) => {
-       console.log("NEW MESSAGE");
        const i = e.data.indexOf('|');
+       console.log(e.data);
        const [name, text] = [e.data.slice(0,i), e.data.slice(i+1)];
-       writeToScreen(`<span style="color:red">${name}: </span>${text}`);
+       writeToScreen(`<span style="color:red"><${name}></span><span> ${text}<span>`);
     };
 
     websocket.onerror = (e) => {
@@ -90,16 +83,10 @@ textarea {
        output.insertAdjacentHTML("afterbegin", `<p>${message}</p>`);
     }
 
-    function onNameButton() {
-       const name = namearea.value;
-       name && doSend(`NAME: ${name}`);
-       textarea.focus();
-
-    }
     function onClickButton() {
       const text = textarea.value;
 
-      text && doSend(`TEXT: ${text}`);
+      text && doSend(text);
       textarea.value = "";
       textarea.focus();
     }

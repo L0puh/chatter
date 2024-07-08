@@ -16,7 +16,8 @@ typedef enum {
    WS,
    NOT_FOUND,
    ERROR,
-   CLOSE
+   CLOSE,
+   NAME
 } req_type;
 
 typedef struct {
@@ -34,7 +35,7 @@ typedef struct {
 
 
 typedef struct {
- 
+
    int sockfd;
    
    int is_ws;
@@ -44,6 +45,7 @@ typedef struct {
 
    char* addr; 
    char* current_page;
+   char* username;
 
 } user_t;
 
@@ -69,6 +71,7 @@ static char* DIR = "resources";
 static char* available_routs[] = {
    "",
    "/",
+   "index.html",
    "error.html",
    "websocket.html",
 };
