@@ -51,10 +51,12 @@ void set_current_page(user_t *user, char* res){
 int is_connection_exists(user_t *user){
    for (int i = 0; i < GLOBAL.connections_size; i++){
       user_t *u = GLOBAL.connections[i];
-      if (strcmp(u->addr, user->addr) == 0){
+      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws){
+         user->username = u->username;
          u = user;
+         GLOBAL.connections[i] = u;
          return 1;
-      }
+      } 
    }
    return 0;
 }
@@ -87,8 +89,8 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
          user->is_ws = 1;
          user->ws_state = WS_TEXT;
          if (!is_connection_exists(user)){
-            user->ws_id = GLOBAL.connections_size;
             pthread_mutex_lock(&GLOBAL.mutex);
+            user->ws_id = GLOBAL.connections_size;
             if (GLOBAL.connections_size+1 < QUERY)
                GLOBAL.connections[GLOBAL.connections_size++] = user;
             pthread_mutex_unlock(&GLOBAL.mutex);
@@ -146,12 +148,11 @@ void handle_ws(user_t *user, char* buffer, int bytes){
          else error(__func__,"corrupted frame");
          free(message);
       }
-   }
-   else if (res == CLOSE) {
-   pthread_mutex_lock(&GLOBAL.mutex);
+   } else if (res == CLOSE) {
+      pthread_mutex_lock(&GLOBAL.mutex);
       user->is_ws = 0;
       user->ws_state = WS_CLOSE;
-   pthread_mutex_unlock(&GLOBAL.mutex);
+      pthread_mutex_unlock(&GLOBAL.mutex);
    }
 }
 

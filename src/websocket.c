@@ -148,9 +148,9 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
 }
 void ws_send_broadcast(char* buffer, uint64_t buffer_sz){
    for (int i = 0; i < GLOBAL.connections_size; i++){
-      user_t user = *GLOBAL.connections[i];
-      if (user.is_ws && user.ws_state != WS_CLOSE) 
-         ws_send(user, buffer, buffer_sz);
+      user_t *user = GLOBAL.connections[i];
+      if (user->is_ws && user->ws_state != WS_CLOSE) 
+         ws_send(*user, buffer, buffer_sz);
    }
 }
 void ws_send(user_t user, char* buffer, uint64_t buffer_sz){

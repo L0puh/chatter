@@ -5,49 +5,19 @@
    <title>chatter</title>
 </head>
 <style>
-
 body {
    text-align: center;
    font-family: monospace;
 }
-textarea {
-   height: 34px;
-   width: 450px;
-   position: fixed;
-   resize:none;
-   top: 100%;
-   left: 60%;
-   margin-top: -100px;
-   margin-left: -400px;
-}
-.log{
-   color: red;
-   font-weight: bold;
-   font-size: 20px;
-   top: 100%;
-   left: 90%;
-   margin-top: -100px;
-   margin-left: -100px;
-   position: fixed;
-}
-#send_button {
-   position: fixed;
-   height: 40px;
-   top: 100%;
-   left: 90%;
-   margin-top: -100px;
-   margin-left: -200px;
-}
-
 </style>
 <body>
    <a href ="/"><input value = "INDEX" type="button"></a>
    <h2>WebSocket</h2>
-    <textarea id = "message_field" cols="60" rows="6"></textarea>
     <p>
        <input  id="name_input" type="TEXT" placeholder="your name"></input>
        <button id="name">ok</button>
     </p>
+    <textarea id = "message_field" cols="60" rows="6"></textarea>
     <p><button id="send_button">SEND</button></p>
     <div id="output"></div>
   </body>
