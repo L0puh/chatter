@@ -108,8 +108,6 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
    if (ws_buffer == NULL) return;
-   res = ws_parse_message(ws_buffer);
-
    switch (res){
       case ERROR:
       case CLOSE:
@@ -118,24 +116,26 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
          user->ws_state = WS_CLOSE;
          pthread_mutex_unlock(&GLOBAL.mutex);
          break;
-      case NAME:
-         user->username = ws_buffer;
-         break;
-      case TEXT:
-         len = strlen(ws_buffer) + strlen(user->username)+1;
-         message = malloc(len*sizeof(char)+1); 
-         message[len*sizeof(char)] = '\0';
-         sprintf(message, "%s|%s", user->username, ws_buffer);
-        
-         frame.opcode = WS_TEXT;
-         frame.payload_len = len * sizeof(char)+1;
-         
-         strcpy(frame.data, message);
-         char* res = ws_get_frame(frame, &buffer_sz);
-         if (res != NULL && buffer_sz > 0)
-            ws_send_broadcast(res, buffer_sz);
-         else error(__func__,"corrupted frame");
-         free(message);
+      case OK:
+         res = ws_parse_message(ws_buffer);
+         if (res == NAME)
+            user->username = ws_buffer;
+         else{
+            len = strlen(ws_buffer) + strlen(user->username)+1;
+            message = malloc(len*sizeof(char)+1); 
+            message[len*sizeof(char)] = '\0';
+            sprintf(message, "%s|%s", user->username, ws_buffer);
+           
+            frame.opcode = WS_TEXT;
+            frame.payload_len = len * sizeof(char)+1;
+            
+            strcpy(frame.data, message);
+            char* res = ws_get_frame(frame, &buffer_sz);
+            if (res != NULL && buffer_sz > 0)
+               ws_send_broadcast(res, buffer_sz);
+            else error(__func__,"corrupted frame");
+            free(message);
+         }
          break;
       default:
          return;
