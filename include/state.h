@@ -17,7 +17,8 @@ typedef enum {
    NOT_FOUND,
    ERROR,
    CLOSE,
-   NAME
+   NAME,
+   TEXT
 } req_type;
 
 typedef struct {

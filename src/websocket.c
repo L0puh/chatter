@@ -50,7 +50,7 @@ char* ws_create_upgrade(const request_t req){
    return result;
 }
 
-char* ws_recv_frame(char* buffer, int *res){
+char* ws_recv_frame(char* buffer, req_type *res){
    uint16_t offset;
    uint64_t msglen;
    uint8_t fin, mask, opcode;
@@ -173,16 +173,54 @@ void ws_send_close(){
 }
 
 
-int  ws_parse_message(char* ws_buffer){
+int ws_parse_message(char* ws_buffer){
    char* p, *text = "TEXT: ", *name = "NAME: ";
    if ((p = strstr(ws_buffer, text)) != NULL){
       p+=strlen(text);
       strcpy(ws_buffer, p);
-      return WS_TEXT;
+      return TEXT;
    } else if ((p = strstr(ws_buffer, name)) != NULL){
       p+=strlen(name);
       strcpy(ws_buffer, p);
       return NAME;
    }
    return NONE;
+}
+
+void ws_establish_connections(char* buffer, request_t *req, user_t *user){
+   char* ws;
+   logger(__func__, "WebSocket request");
+   
+   ws = ws_key_parse(buffer);
+   if (ws == NULL) 
+      error(__func__, "error in parsing WS key");
+
+   user->is_ws = 1;
+   req->code = 101;
+   user->ws_state = WS_TEXT;
+   req->header = "Switching Protocols";
+   req->accept = ws_create_accept(ws);
+   
+   if (!is_connection_exists(user)){
+      pthread_mutex_lock(&GLOBAL.mutex);
+      user->ws_id = GLOBAL.connections_size;
+      if (GLOBAL.connections_size+1 < QUERY)
+         GLOBAL.connections[GLOBAL.connections_size++] = user;
+      pthread_mutex_unlock(&GLOBAL.mutex);
+   }
+   
+   free(ws);
+}
+
+int is_connection_exists(user_t *user){
+   for (int i = 0; i < GLOBAL.connections_size; i++){
+      user_t *u = GLOBAL.connections[i];
+      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws){
+         user->username = u->username;
+         u = user;
+         GLOBAL.connections[i] = u;
+         return 1;
+      } 
+   }
+   return 0;
 }

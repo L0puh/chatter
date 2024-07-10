@@ -7,7 +7,7 @@ LIBS= -lcrypto -lpthread
 FLAGS=-I$(INCLUDE_DIR) -Wno-deprecated-declarations $(LIBS)
 
 all: server
-debug: FLAGS += -DDEBUG -g
+debug: FLAGS+=-g -DDEBUG 
 
 $(BUILD_DIR)/%.o: src/%.c 
 	mkdir -p $(BUILD_DIR)

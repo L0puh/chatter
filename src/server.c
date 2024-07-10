@@ -1,5 +1,6 @@
 #include "server.h"
 #include "http.h"
+#include "state.h"
 #include "utils.h"
 #include "websocket.h"
 
@@ -48,66 +49,44 @@ void set_current_page(user_t *user, char* res){
    return;
 }
 
-int is_connection_exists(user_t *user){
-   for (int i = 0; i < GLOBAL.connections_size; i++){
-      user_t *u = GLOBAL.connections[i];
-      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws){
-         user->username = u->username;
-         u = user;
-         GLOBAL.connections[i] = u;
-         return 1;
-      } 
-   }
-   return 0;
-}
 
-int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
-   char *res, *ws;
+req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
+   char *res;
    req_type type = get_type_request(buffer, bytes);
-   
-
-   if (bytes > 0 && type == POST && !user->is_ws){
-      logger(__func__, "POST request");
-      
-      res = post_parse(buffer, bytes, "input=");
-      if (res != NULL) {
-         remove_prefix(res, "input=");
-         url_decode(res);
-         write_input(res, strlen(res), user->addr);
+   if (bytes > 0){
+      switch(type){
+         case GET:
+            if (strstr(buffer, "Sec-WebSocket-Key") != NULL){
+               ws_establish_connections(buffer, req, user);
+               return WS;
+            }
+            res = header_parse(buffer, bytes, " ");
+            if (is_contain(res, '/')){
+               set_current_page(user, res);
+               
+               if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
+                  logger(__func__, "delete chat history");
+                  system("rm -f resources/text.txt && touch resources/text.txt"); 
+                  update_html();
+               }
+            }
+            break;
+         case POST:
+            logger(__func__, "POST request");
+            
+            res = post_parse(buffer, bytes, "input=");
+            if (res != NULL) {
+               remove_prefix(res, "input=");
+               url_decode(res);
+               write_input(res, strlen(res), user->addr);
+            }
+            break;
+         default:
+            error(__func__, "unsupported type of request");
+            return NONE;
       }
+   }
 
-   } else if (bytes > 0 && type == GET){
-      if (strstr(buffer, "Sec-WebSocket-Key") != 0){
-         logger(__func__, "WebSocket request");
-         ws = malloc(128);
-         ws = ws_key_parse(buffer);
-         if (ws == NULL) 
-            error(__func__, "error in parsing WS key");
-         req->header = "Switching Protocols";
-         req->code = 101;
-         req->accept = ws_create_accept(ws);
-         user->is_ws = 1;
-         user->ws_state = WS_TEXT;
-         if (!is_connection_exists(user)){
-            pthread_mutex_lock(&GLOBAL.mutex);
-            user->ws_id = GLOBAL.connections_size;
-            if (GLOBAL.connections_size+1 < QUERY)
-               GLOBAL.connections[GLOBAL.connections_size++] = user;
-            pthread_mutex_unlock(&GLOBAL.mutex);
-         }
-         return WS;
-      } 
-      res = header_parse(buffer, bytes, " ");
-      if (is_contain(res, '/')){
-         set_current_page(user, res);
-         
-         if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
-            logger(__func__, "delete chat history");
-            system("rm -f resources/text.txt && touch resources/text.txt"); 
-            update_html();
-         }
-      }
-   } 
 
    req->header = "OK";
    req->code = 200;
@@ -120,20 +99,30 @@ int handle_request(user_t *user, request_t *req, char* buffer, int bytes){
 }
 
 
-void handle_ws(user_t *user, char* buffer, int bytes){
-   int res;
+void handle_ws_request(user_t *user, char* buffer, int bytes){
+   int len;
+   req_type res;
    char* message;
    uint64_t buffer_sz;
    ws_frame_t frame;
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
-   if (ws_buffer != NULL && res != ERROR && res != CLOSE){
-      
-      res = ws_parse_message(ws_buffer);
-      if (res == NAME) {
+   if (ws_buffer == NULL) return;
+   res = ws_parse_message(ws_buffer);
+
+   switch (res){
+      case ERROR:
+      case CLOSE:
+         pthread_mutex_lock(&GLOBAL.mutex);
+         user->is_ws = 0;
+         user->ws_state = WS_CLOSE;
+         pthread_mutex_unlock(&GLOBAL.mutex);
+         break;
+      case NAME:
          user->username = ws_buffer;
-      } else {
-         int len = strlen(ws_buffer) + strlen(user->username)+1;
+         break;
+      case TEXT:
+         len = strlen(ws_buffer) + strlen(user->username)+1;
          message = malloc(len*sizeof(char)+1); 
          message[len*sizeof(char)] = '\0';
          sprintf(message, "%s|%s", user->username, ws_buffer);
@@ -147,33 +136,36 @@ void handle_ws(user_t *user, char* buffer, int bytes){
             ws_send_broadcast(res, buffer_sz);
          else error(__func__,"corrupted frame");
          free(message);
-      }
-   } else if (res == CLOSE) {
-      pthread_mutex_lock(&GLOBAL.mutex);
-      user->is_ws = 0;
-      user->ws_state = WS_CLOSE;
-      pthread_mutex_unlock(&GLOBAL.mutex);
+         break;
+      default:
+         return;
    }
 }
 
 void* handle_client(void* th_user){
+   int bytes;
    user_t *user; 
    request_t req;
-   int bytes, res;
+   req_type res;
    char buffer[MAXLEN];
+  
    user = (user_t*)th_user;
+
    while ((bytes = recv(user->sockfd, buffer, sizeof(buffer), 0)) > 0){
       buffer[bytes] = '\0';
-      res = handle_request(user, &req, buffer, bytes);
-      
-      if (user->is_ws == 1) handle_ws(user, buffer, bytes);
-      if (res == WS || user->is_ws == 0)
+
+      if (!user->is_ws){
+         res = handle_http_request(user, &req, buffer, bytes);
          send_response(*user, req);
+      } else 
+         handle_ws_request(user, buffer, bytes);
    }
+   
    ASSERT(bytes);
    close(user->sockfd);
    pthread_exit(0);
    free(th_user);
+
    return 0;
 }
 

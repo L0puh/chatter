@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "server.h"
 #include "state.h"
+#include "websocket.h"
 
 #include <netinet/in.h>
 #include <pthread.h>
@@ -41,6 +42,7 @@ int main(int argc, char* argv[]){
       ASSERT(pthread_create(&ptr, NULL, handle_client, (void*)user));
       ASSERT(pthread_detach(ptr));
    }
+   ws_send_close();
    close(sockfd);
    return 0;
 }
