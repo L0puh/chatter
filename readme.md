@@ -20,9 +20,12 @@ openssl req -new -key key.pem -out csr
 ```shell
 openssl x509 -req -in csr -signkey key.pem -out cert.pem -days 365
 ```
+4. use `--SSL` option to enable https
+
 #### run 
 ```shell
 make . && ./server <PORT>
-```  
+```
+
 
 
