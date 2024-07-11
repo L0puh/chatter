@@ -3,7 +3,7 @@ BUILD_DIR=build
 INCLUDE_DIR=include
 SOURCES=$(wildcard src/*c)
 OBJECTS=$(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
-LIBS= -lcrypto -lpthread
+LIBS= -lcrypto -lpthread -lssl
 FLAGS=-I$(INCLUDE_DIR) -Wno-deprecated-declarations $(LIBS)
 
 all: server

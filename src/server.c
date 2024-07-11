@@ -4,13 +4,14 @@
 #include "utils.h"
 #include "websocket.h"
 
-#include <bits/pthreadtypes.h>
+#include <openssl/ssl.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 struct state GLOBAL;
+
 
 void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
    char message[32]; int enable = 1;
@@ -57,7 +58,7 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
       switch(type){
          case GET:
             if (strstr(buffer, "Sec-WebSocket-Key") != NULL){
-               ws_establish_connections(buffer, req, user);
+               ws_establish_connection(buffer, req, user);
                return WS;
             }
             res = header_parse(buffer, bytes, " ");
@@ -107,6 +108,10 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
    ws_frame_t frame;
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
+   
+   user->ws_state = WS_TEXT;
+   user->is_ssl = 0;
+
    if (ws_buffer == NULL) return;
    switch (res){
       case ERROR:
@@ -150,15 +155,25 @@ void* handle_client(void* th_user){
    char buffer[MAXLEN];
   
    user = (user_t*)th_user;
-
-   while ((bytes = recv(user->sockfd, buffer, sizeof(buffer), 0)) > 0){
-      buffer[bytes] = '\0';
-
-      if (!user->is_ws){
-         res = handle_http_request(user, &req, buffer, bytes);
-         send_response(*user, req);
-      } else 
-         handle_ws_request(user, buffer, bytes);
+   
+   if (user->is_ssl){
+      while ((bytes = SSL_read(user->SSL_sockfd, buffer, sizeof(buffer))) > 0){
+         buffer[bytes] = '\0';
+         if (!user->is_ws){
+            res = handle_http_request(user, &req, buffer, bytes);
+            send_response(user, req);
+         } else 
+            handle_ws_request(user, buffer, bytes);
+      }
+   } else {
+      while ((bytes = recv(user->sockfd, buffer, sizeof(buffer), 0)) > 0){
+         buffer[bytes] = '\0';
+         if (!user->is_ws){
+            res = handle_http_request(user, &req, buffer, bytes);
+            send_response(user, req);
+         } else 
+            handle_ws_request(user, buffer, bytes);
+      }
    }
    
    ASSERT(bytes);

@@ -2,6 +2,7 @@
 #include "state.h"
 
 #include <limits.h>
+#include <openssl/err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,12 +83,23 @@ int is_contain(char* message, char symbol){
 }
 
 void print_usage(int argc){
-   if (argc != 2){
+   if (argc < 2){
       printf("usage: ./server <PORT>\n");
+      printf("options: --SSL\n");
       exit(0);
    }
 }
 
+uint8_t get_options(int argc, char* argv[]){
+   uint8_t options = 0;
+   if (argc == 3){
+      if (strcmp(argv[2],"--SSL") == 0){
+         options |= SSL_flag;
+         logger(__func__, "SSL option is enabled");
+      }
+   }
+   return options;
+}
 void remove_prefix(char *str, const char* prefix){
    char* p;
    if ((p = strtok(str, prefix)) != NULL){
@@ -120,6 +132,11 @@ void logger(const char* where, char* what){
 void errorl(const char* where, char* file, int line){
 #ifdef LOG_ON
     printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, strerror(errno));
+#endif
+}
+void ssl_error(const char* where, char* file, int line){
+#ifdef LOG_ON
+   printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, ERR_error_string(ERR_get_error(), NULL));
 #endif
 }
 void error(const char* where, char* what){

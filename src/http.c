@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <limits.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,7 +106,7 @@ char* cookies_parse(char *buffer, char* key){
    return NULL;
 }
 
-void send_response(user_t user, request_t req){
+void send_response(user_t *user, request_t req){
    char* format;
    char* result; 
    int bytes_sent, total;
@@ -126,8 +127,11 @@ void send_response(user_t user, request_t req){
    else if (req.code == 101){
       result = ws_create_upgrade(req);
    }
+   if (!user->is_ssl){
+      bytes_sent = send(user->sockfd, result, strlen(result), 0);
+   } else 
+      bytes_sent = SSL_write(user->SSL_sockfd, result, strlen(result));
 
-   bytes_sent = send(user.sockfd, result, strlen(result), 0);
    ASSERT(bytes_sent);
   
    free(result);  

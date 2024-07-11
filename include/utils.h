@@ -2,12 +2,15 @@
 #define UTILS_H
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
 
 #define ASSERT(res) { if (res < 0){ errorl((char*)__func__, (char*) __FILE__, __LINE__); }}
+#define SSL_ASSERT(res) { if (res <= 0){ ssl_error((char*)__func__, (char*) __FILE__, __LINE__); }}
 #define LEN(arr) sizeof(arr)/sizeof(arr[0])
 
 void print_usage(int argc);
+uint8_t get_options(int argc, char* argv[]);
 
 int  is_contain(char* message, char symbol);
 void remove_prefix(char* str, const char* prefix);
@@ -19,6 +22,7 @@ void write_input(char* buffer, size_t sz, char* data);
 
 void logger(const char* where, char* what);
 void error(const char* where, char* what);
+void ssl_error(const char* where, char* file, int line);
 void errorl(const char* where, char* file, int line);
 
 

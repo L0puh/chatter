@@ -3,21 +3,25 @@
 #include "server.h"
 #include "state.h"
 #include "websocket.h"
+#include "ssl.h"
 
-#include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
 int main(int argc, char* argv[]){
    user_t *user;
    pthread_t ptr;
    socklen_t cliaddr_sz;
+   uint8_t options;
    int sockfd, client_sockfd;
    struct sockaddr_in servaddr, cliaddr;
 
    print_usage(argc);
+   init_ssl();
+   options = get_options(argc, argv);
 
    GLOBAL.SERVER_RUNNING = 1;
    GLOBAL.DEFAULT_PAGE = INDEX_PAGE;
@@ -30,11 +34,16 @@ int main(int argc, char* argv[]){
   
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
-
+      
       user = malloc(sizeof(user_t));
+      user->is_ssl = 0;
+      if (options & SSL_flag){
+         user->is_ssl = 1;
+         user->SSL_sockfd = create_ssl(client_sockfd);
+      }
+      user->sockfd = client_sockfd;
       user->addr = get_str_addr(cliaddr);
       user->port = ntohs(cliaddr.sin_port);
-      user->sockfd = client_sockfd;
       user->current_page = GLOBAL.DEFAULT_PAGE;
       user->is_ws = 0;
       user->username = user->addr;

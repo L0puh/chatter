@@ -5,6 +5,7 @@
 #define MAXLEN 4096
 
 #include <pthread.h>
+#include <openssl/ssl.h>
 
 extern struct state GLOBAL;
 
@@ -18,8 +19,14 @@ typedef enum {
    ERROR,
    CLOSE,
    NAME,
-   TEXT
+   TEXT,
+   WS_CONNECT,
 } req_type;
+
+
+typedef enum {
+   SSL_flag = 0x0001,
+} options_flags;
 
 typedef struct {
 
@@ -38,8 +45,10 @@ typedef struct {
 typedef struct {
 
    int sockfd;
+   SSL *SSL_sockfd;
    
    int is_ws;
+   int is_ssl;
    int ws_id;
    int ws_state;
    int port;

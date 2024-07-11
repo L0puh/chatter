@@ -11,7 +11,7 @@ char* get_str_addr(struct sockaddr_in addr);
 char* set_cookie(char* param, char* value);
 char* cookies_parse(char *buffer, char* key);
 void  url_decode(char* str);
-void  send_response(user_t user, request_t req);
+void  send_response(user_t *user, request_t req);
 void  recv_loop(int client_sockfd, char* buffer, int *bytes);
 
 #endif
