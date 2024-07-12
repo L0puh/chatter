@@ -13,6 +13,7 @@ tiny web chat application in pure c
 make . && ./server <PORT>
 ```
 <details><summary><b>with SSL</b></summary>
+  
 1. generate private key:
 ```shell
 openssl genrsa -out key.pem 2048
