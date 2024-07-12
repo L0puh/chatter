@@ -48,7 +48,7 @@ body {
     const textarea = document.querySelector("#message_field");
     const namearea = document.querySelector("#name_input");
     const namebutton = document.querySelector("#name");
-    const wsUri = "wss://localhost:8080/";
+    const wsUri = "ws://localhost:8080/";
     const websocket = new WebSocket(wsUri);
 
     button.addEventListener("click", onClickButton);

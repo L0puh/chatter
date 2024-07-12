@@ -4,6 +4,7 @@
 #include "state.h"
 #include <arpa/inet.h>
 
+void  init_server(int port, int *sockfd, struct sockaddr_in*, size_t);
 int   get_type_request(char* message, size_t sz);
 char* header_parse(const char* message, size_t sz, const char* symbol);
 char* post_parse(const char* message, size_t sz, const char* symbol);

@@ -1,4 +1,6 @@
 ### CHATTER
+
+### about
 tiny web chat application in pure c
 
 ### current features:
@@ -7,7 +9,10 @@ tiny web chat application in pure c
 - SSL support with openSSL for https and wss
 
 ### install && run:
-#### with SSL
+```shell
+make . && ./server <PORT>
+```
+<details><summary><b>with SSL</b></summary>
 1. generate private key:
 ```shell
 openssl genrsa -out key.pem 2048
@@ -20,12 +25,8 @@ openssl req -new -key key.pem -out csr
 ```shell
 openssl x509 -req -in csr -signkey key.pem -out cert.pem -days 365
 ```
-4. use `--SSL` option to enable https
+4. use `--SSL` option to enable https and wss
 
-#### run 
-```shell
-make . && ./server <PORT>
-```
 
 
 

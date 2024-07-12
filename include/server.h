@@ -8,7 +8,6 @@
 
 #include "state.h"
 
-void  init_server(int port, int *sockfd, struct sockaddr_in*, size_t);
 void  set_current_page(user_t *user, char *input);
 
 void*    handle_client(void* user);

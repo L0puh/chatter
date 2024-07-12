@@ -9,6 +9,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
+   char message[32]; int enable = 1;
+   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
+   logger((char*)__func__, message);
+
+   ASSERT((*sockfd = socket(AF_INET, SOCK_STREAM, 0)));
+   ASSERT(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
+   bzero(servaddr, sz);
+   servaddr->sin_port = htons(port);
+   servaddr->sin_family = AF_INET;
+   servaddr->sin_addr.s_addr = INADDR_ANY; 
+
+   ASSERT(bind(*sockfd, (const struct sockaddr*)servaddr, sz));
+   ASSERT(listen(*sockfd, QUERY));
+   
+   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
+}
+
 char* get_str_addr(struct sockaddr_in addr){
    char* str_addr = malloc(INET_ADDRSTRLEN+1); 
    ASSERT(inet_ntop(addr.sin_family, &(addr.sin_addr), str_addr, INET_ADDRSTRLEN));

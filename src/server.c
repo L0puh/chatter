@@ -12,26 +12,6 @@
 
 struct state GLOBAL;
 
-
-void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
-   char message[32]; int enable = 1;
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
-   logger((char*)__func__, message);
-
-   ASSERT((*sockfd = socket(AF_INET, SOCK_STREAM, 0)));
-   ASSERT(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
-   bzero(servaddr, sz);
-   servaddr->sin_port = htons(port);
-   servaddr->sin_family = AF_INET;
-   servaddr->sin_addr.s_addr = INADDR_ANY; 
-
-   ASSERT(bind(*sockfd, (const struct sockaddr*)servaddr, sz));
-   ASSERT(listen(*sockfd, QUERY));
-   
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
-}
-
-
 void set_current_page(user_t *user, char* res){
    if (strcmp(res, "/favicon.ico") == 0) return;
    if (strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0){
