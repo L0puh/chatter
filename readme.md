@@ -3,8 +3,8 @@ tiny web chat application in pure c
 
 ### current features:
 - http server
-- https with SSL
 - websocket server (based on [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455))
+- SSL support with openSSL for https and wss
 
 ### install && run:
 #### with SSL

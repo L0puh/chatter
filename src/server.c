@@ -109,41 +109,45 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
    
-   user->ws_state = WS_TEXT;
-   user->is_ssl = 0;
-
    if (ws_buffer == NULL) return;
+
    switch (res){
       case ERROR:
       case CLOSE:
-         pthread_mutex_lock(&GLOBAL.mutex);
+         pthread_mutex_lock(&user->mutex);
          user->is_ws = 0;
          user->ws_state = WS_CLOSE;
-         pthread_mutex_unlock(&GLOBAL.mutex);
+         pthread_mutex_unlock(&user->mutex);
          break;
       case OK:
          res = ws_parse_message(ws_buffer);
          if (res == NAME)
             user->username = ws_buffer;
          else{
-            len = strlen(ws_buffer) + strlen(user->username)+1;
-            message = malloc(len*sizeof(char)+1); 
-            message[len*sizeof(char)] = '\0';
-            sprintf(message, "%s|%s", user->username, ws_buffer);
+            len = strlen(ws_buffer) + strlen(user->username) + 2 * CHAR_BIT;
+            if (len >= MAXLEN){
+               error(__func__, "buffer overflow");
+               return;
+            }
+            message = malloc(len + 1);
+            message[len+1] = '\0';
            
-            frame.opcode = WS_TEXT;
-            frame.payload_len = len * sizeof(char)+1;
+            sprintf(message, "%s|%s", user->username, ws_buffer);
             
+            frame.opcode = WS_TEXT;
+            frame.payload_len = len;
+            frame.data = malloc(len);
             strcpy(frame.data, message);
+
             char* res = ws_get_frame(frame, &buffer_sz);
-            if (res != NULL && buffer_sz > 0)
+            if (res != NULL && buffer_sz > 0){
                ws_send_broadcast(res, buffer_sz);
-            else error(__func__,"corrupted frame");
+            } else error(__func__,"corrupted frame");
             free(message);
          }
          break;
       default:
-         return;
+         break;
    }
 }
 
@@ -156,30 +160,33 @@ void* handle_client(void* th_user){
   
    user = (user_t*)th_user;
    
-   if (user->is_ssl){
-      while ((bytes = SSL_read(user->SSL_sockfd, buffer, sizeof(buffer))) > 0){
+   if (user->is_ssl && user->SSL_sockfd){
+      while ((bytes = SSL_read(user->SSL_sockfd, buffer, sizeof(buffer)))  > 0){
          buffer[bytes] = '\0';
          if (!user->is_ws){
             res = handle_http_request(user, &req, buffer, bytes);
             send_response(user, req);
-         } else 
+         } else {
             handle_ws_request(user, buffer, bytes);
+         }
       }
+    SSL_ASSERT(bytes);
    } else {
       while ((bytes = recv(user->sockfd, buffer, sizeof(buffer), 0)) > 0){
          buffer[bytes] = '\0';
          if (!user->is_ws){
             res = handle_http_request(user, &req, buffer, bytes);
             send_response(user, req);
-         } else 
+         } else {
             handle_ws_request(user, buffer, bytes);
+         }
       }
+      ASSERT(bytes);
    }
-   
-   ASSERT(bytes);
+   SSL_free(user->SSL_sockfd);
    close(user->sockfd);
-   pthread_exit(0);
    free(th_user);
+   pthread_exit(0);
 
    return 0;
 }

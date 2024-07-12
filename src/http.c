@@ -127,12 +127,13 @@ void send_response(user_t *user, request_t req){
    else if (req.code == 101){
       result = ws_create_upgrade(req);
    }
-   if (!user->is_ssl){
-      bytes_sent = send(user->sockfd, result, strlen(result), 0);
-   } else 
-      bytes_sent = SSL_write(user->SSL_sockfd, result, strlen(result));
 
-   ASSERT(bytes_sent);
+   pthread_mutex_lock(&user->mutex);
+   if (user->is_ssl){
+      SSL_ASSERT(SSL_write(user->SSL_sockfd, result, strlen(result)));
+   } else 
+      ASSERT(send(user->sockfd, result, strlen(result), 0));
+   pthread_mutex_unlock(&user->mutex);
   
    free(result);  
 }

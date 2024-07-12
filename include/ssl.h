@@ -6,7 +6,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
-void init_ssl();
-SSL* create_ssl(int sockfd);
+SSL_CTX* init_ssl();
+SSL* create_ssl(int sockfd, SSL_CTX* sslctx);
 
 #endif

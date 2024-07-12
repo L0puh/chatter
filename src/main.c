@@ -5,6 +5,7 @@
 #include "websocket.h"
 #include "ssl.h"
 
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,11 +18,13 @@ int main(int argc, char* argv[]){
    socklen_t cliaddr_sz;
    uint8_t options;
    int sockfd, client_sockfd;
+   SSL_CTX* ctx;
    struct sockaddr_in servaddr, cliaddr;
 
    print_usage(argc);
-   init_ssl();
    options = get_options(argc, argv);
+   if (options & SSL_flag)
+      ctx = init_ssl();
 
    GLOBAL.SERVER_RUNNING = 1;
    GLOBAL.DEFAULT_PAGE = INDEX_PAGE;
@@ -36,10 +39,12 @@ int main(int argc, char* argv[]){
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
       
       user = malloc(sizeof(user_t));
-      user->is_ssl = 0;
       if (options & SSL_flag){
          user->is_ssl = 1;
-         user->SSL_sockfd = create_ssl(client_sockfd);
+         user->SSL_sockfd = create_ssl(client_sockfd, ctx);
+      } else {
+         user->is_ssl = 0;
+         user->SSL_sockfd = NULL;
       }
       user->sockfd = client_sockfd;
       user->addr = get_str_addr(cliaddr);
@@ -47,6 +52,7 @@ int main(int argc, char* argv[]){
       user->current_page = GLOBAL.DEFAULT_PAGE;
       user->is_ws = 0;
       user->username = user->addr;
+      pthread_mutex_init(&user->mutex, 0);
 
       ASSERT(pthread_create(&ptr, NULL, handle_client, (void*)user));
       ASSERT(pthread_detach(ptr));

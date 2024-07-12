@@ -3,6 +3,7 @@
 
 #include <netinet/in.h>
 #include <openssl/sha.h>
+#include <openssl/ssl.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -123,7 +124,7 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
          if (frame.payload_len < 126) {
             buffer[1] = (char)frame.payload_len;
             offset = 2;
-         } else if (frame.payload_len < 65536) {
+         } else if (frame.payload_len < WS_MAXLEN) {
             buffer[1] = 0x7E; 
             buffer[2] = (frame.payload_len>> 8) & 0xFF;
             buffer[3] =  frame.payload_len& 0xFF;
@@ -147,17 +148,22 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
    return buffer;
 }
 void ws_send_broadcast(char* buffer, uint64_t buffer_sz){
+   pthread_mutex_lock(&GLOBAL.mutex);
    for (int i = 0; i < GLOBAL.connections_size; i++){
       user_t *user = GLOBAL.connections[i];
       if (user->is_ws && user->ws_state != WS_CLOSE) 
-         ws_send(*user, buffer, buffer_sz);
+         ws_send(user, buffer, buffer_sz);
    }
+   pthread_mutex_unlock(&GLOBAL.mutex);
 }
-void ws_send(user_t user, char* buffer, uint64_t buffer_sz){
-   if (user.sockfd != -1){
-      pthread_mutex_lock(&GLOBAL.mutex);
-      ASSERT(send(user.sockfd, buffer, buffer_sz, 0));
-      pthread_mutex_unlock(&GLOBAL.mutex);
+void ws_send(user_t *user, char* buffer, uint64_t buffer_sz){
+   if (user->sockfd != -1){
+      pthread_mutex_lock(&user->mutex);
+      if (user->is_ssl && user->SSL_sockfd){
+         int bytes = SSL_write(user->SSL_sockfd, buffer, (int)buffer_sz);
+      } else if (!user->is_ssl)
+         ASSERT(send(user->sockfd, buffer, buffer_sz, 0));
+      pthread_mutex_unlock(&user->mutex);
    } else 
       error(__func__, "invalid socket");
 }
@@ -192,9 +198,12 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
    logger(__func__, "WebSocket request");
    
    ws = ws_key_parse(buffer);
+
    if (ws == NULL) 
       error(__func__, "error in parsing WS key");
 
+   pthread_mutex_lock(&user->mutex);
+ 
    user->is_ws = 1;
    req->code = 101;
    user->ws_state = WS_CONNECT;
@@ -206,9 +215,12 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
       user->ws_id = GLOBAL.connections_size;
       if (GLOBAL.connections_size+1 < QUERY)
          GLOBAL.connections[GLOBAL.connections_size++] = user;
+      
+      logger("new connection", user->addr);
       pthread_mutex_unlock(&GLOBAL.mutex);
    }
    
+   pthread_mutex_unlock(&user->mutex);
    free(ws);
 }
 
