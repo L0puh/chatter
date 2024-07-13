@@ -61,6 +61,7 @@ int main(int argc, char* argv[]){
    }
    ws_send_close();
    SSL_CTX_free(ctx);
+   connections_cleanup();
    close(sockfd);
    return 0;
 }

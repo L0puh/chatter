@@ -199,41 +199,35 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
    if (ws == NULL) 
       error(__func__, "error in parsing WS key");
    
-   pthread_mutex_lock(&user->mutex);
    user->is_ws = 1;
-   user->ws_state = WS_CONNECT;
    req->code = 101;
+   user->ws_state = WS_CONNECT;
    req->header = "Switching Protocols";
    req->accept = ws_create_accept(ws);
    
    if (!is_connection_exists(user)){
+      pthread_mutex_lock(&GLOBAL.mutex);
       if (GLOBAL.connections_size+1 >= QUERY)
          error(__func__, "limit of connections");
       else {
          user->ws_id = GLOBAL.connections_size;
          GLOBAL.connections[GLOBAL.connections_size++] = user;
       }
+      pthread_mutex_unlock(&GLOBAL.mutex);
    } 
-   pthread_mutex_unlock(&user->mutex);
    free(ws);
 }
 
 int is_connection_exists(user_t *user){
-
-   pthread_mutex_lock(&GLOBAL.mutex);
-
    for (int i = 0; i < GLOBAL.connections_size; i++){
       user_t *u = GLOBAL.connections[i];
-      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws)
-      {
+      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws){
          user->username = u->username;
          u = user;
          GLOBAL.connections[i] = u;
-         pthread_mutex_unlock(&GLOBAL.mutex);
          return 1;
       } 
    }
 
-   pthread_mutex_unlock(&GLOBAL.mutex);
    return 0;
 }

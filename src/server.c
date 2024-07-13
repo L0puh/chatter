@@ -20,7 +20,10 @@ void set_current_page(user_t *user, char* res){
    }
    remove_prefix(res, "/");
    res = strtok(res, "\r");
-
+   if (strcmp(res, "websocket.html") == 0){
+      user->current_page = GLOBAL.DEFAULT_WEBSOCKET_PAGE;
+      return;
+   }
    for (int i = 0; i < LEN(available_routs); i++){
       if (strcmp(res, available_routs[i]) == 0){
          user->current_page = res;
@@ -91,6 +94,7 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
    char* ws_buffer = ws_recv_frame(buffer, &res);
    
    if (ws_buffer == NULL) return;
+   user->ws_state = WS_TEXT;
 
    switch (res){
       case ERROR:
@@ -105,30 +109,22 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
          if (res == NAME)
             user->username = ws_buffer;
          else{
-            len = strlen(ws_buffer) + strlen(user->username) + 2 * CHAR_BIT;
-            if (len >= MAXLEN){
-               error(__func__, "buffer overflow");
-               return;
-            }
-            message = malloc(len + 1);
-            message[len+1] = '\0';
-           
+            message = malloc(MAXLEN);
             sprintf(message, "%s|%s", user->username, ws_buffer);
-            
+            len = strlen(message);
             frame.opcode = WS_TEXT;
             frame.payload_len = len;
-            frame.data = malloc(len);
             strcpy(frame.data, message);
-
+            
             char* res = ws_get_frame(frame, &buffer_sz);
-            if (res != NULL && buffer_sz > 0){
+            if (res != NULL && buffer_sz > 0)
                ws_send_broadcast(res, buffer_sz);
-            } else error(__func__,"corrupted frame");
+            else error(__func__,"corrupted frame");
             free(message);
          }
          break;
       default:
-         break;
+         return;
    }
 }
 
@@ -150,11 +146,16 @@ void* handle_client(void* th_user){
          handle_ws_request(user, buffer, bytes);
       }
    }
+
    SSL_free(user->SSL_sockfd);
    close(user->sockfd);
-   free(th_user);
    pthread_exit(0);
 
    return 0;
 }
 
+void connections_cleanup(){
+   for (int i = 0; i < GLOBAL.connections_size; i++)
+      free(GLOBAL.connections[i]);
+   GLOBAL.connections_size = 0;
+}

@@ -14,5 +14,6 @@ void*    handle_client(void* user);
 void     handle_ws_request(user_t *user, char* buffer, int bytes);
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes);
 
+void connections_cleanup();
 
 #endif
