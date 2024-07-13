@@ -2,9 +2,6 @@
 #define WEBSOCKET_H
 
 #include "state.h"
-#include <bits/pthreadtypes.h>
-#include <stdio.h>
-#include <stdint.h>
 
 static char* WS_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 

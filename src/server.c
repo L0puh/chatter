@@ -20,6 +20,7 @@ void set_current_page(user_t *user, char* res){
    }
    remove_prefix(res, "/");
    res = strtok(res, "\r");
+
    for (int i = 0; i < LEN(available_routs); i++){
       if (strcmp(res, available_routs[i]) == 0){
          user->current_page = res;
@@ -131,6 +132,7 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
    }
 }
 
+
 void* handle_client(void* th_user){
    int bytes;
    user_t *user; 
@@ -139,29 +141,14 @@ void* handle_client(void* th_user){
    char buffer[MAXLEN];
   
    user = (user_t*)th_user;
-   
-   if (user->is_ssl && user->SSL_sockfd){
-      while ((bytes = SSL_read(user->SSL_sockfd, buffer, sizeof(buffer)))  > 0){
-         buffer[bytes] = '\0';
-         if (!user->is_ws){
-            res = handle_http_request(user, &req, buffer, bytes);
-            send_response(user, req);
-         } else {
-            handle_ws_request(user, buffer, bytes);
-         }
+  
+   while((bytes = recv_buffer(user, buffer, sizeof(buffer))) > 0){
+      if (!user->is_ws){
+         res = handle_http_request(user, &req, buffer, bytes);
+         send_response(user, req);
+      } else {
+         handle_ws_request(user, buffer, bytes);
       }
-    SSL_ASSERT(bytes);
-   } else {
-      while ((bytes = recv(user->sockfd, buffer, sizeof(buffer), 0)) > 0){
-         buffer[bytes] = '\0';
-         if (!user->is_ws){
-            res = handle_http_request(user, &req, buffer, bytes);
-            send_response(user, req);
-         } else {
-            handle_ws_request(user, buffer, bytes);
-         }
-      }
-      ASSERT(bytes);
    }
    SSL_free(user->SSL_sockfd);
    close(user->sockfd);

@@ -5,7 +5,6 @@
 #include "websocket.h"
 #include "ssl.h"
 
-#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,8 +22,11 @@ int main(int argc, char* argv[]){
 
    print_usage(argc);
    options = get_options(argc, argv);
-   if (options & SSL_flag)
+   if (options & SSL_flag){
       ctx = init_ssl();
+      GLOBAL.DEFAULT_WEBSOCKET_PAGE = "websocket_ssl.html";
+   } else 
+      GLOBAL.DEFAULT_WEBSOCKET_PAGE = "websocket.html";
 
    GLOBAL.SERVER_RUNNING = 1;
    GLOBAL.DEFAULT_PAGE = INDEX_PAGE;
@@ -58,6 +60,7 @@ int main(int argc, char* argv[]){
       ASSERT(pthread_detach(ptr));
    }
    ws_send_close();
+   SSL_CTX_free(ctx);
    close(sockfd);
    return 0;
 }

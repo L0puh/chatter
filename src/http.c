@@ -157,3 +157,17 @@ void send_response(user_t *user, request_t req){
    free(result);  
 }
 
+int recv_buffer(user_t *user, char *buffer, size_t buffer_size){
+   int bytes;
+   if (user->is_ssl && user->SSL_sockfd){
+      bytes = SSL_read(user->SSL_sockfd, buffer, buffer_size);
+      SSL_ASSERT(bytes);
+   } else if (user->sockfd != -1){
+      bytes = recv(user->sockfd, buffer, buffer_size, 0);
+      ASSERT(bytes);
+   }
+   if (bytes > 0)
+      buffer[bytes] = '\0';
+
+   return bytes;
+}

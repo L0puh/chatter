@@ -3,6 +3,7 @@
 #include <openssl/ssl.h>
 
 SSL_CTX* init_ssl(){
+
    SSL_CTX *sslctx;
    SSL_load_error_strings();
    SSL_library_init();

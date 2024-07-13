@@ -14,5 +14,6 @@ char* cookies_parse(char *buffer, char* key);
 void  url_decode(char* str);
 void  send_response(user_t *user, request_t req);
 void  recv_loop(int client_sockfd, char* buffer, int *bytes);
+int   recv_buffer(user_t *user, char* buffer, size_t buffer_size);
 
 #endif

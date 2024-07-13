@@ -63,6 +63,7 @@ typedef struct {
 struct state{
    int SERVER_RUNNING;
    char* DEFAULT_PAGE;
+   char* DEFAULT_WEBSOCKET_PAGE;
    int connections_size;
    user_t* connections[QUERY];
    pthread_mutex_t mutex;
@@ -85,6 +86,7 @@ static char* available_routs[] = {
    "index.html",
    "error.html",
    "websocket.html",
+   "websocket_ssl.html",
 };
 
 #endif 

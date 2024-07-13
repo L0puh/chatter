@@ -1,15 +1,13 @@
-#include "utils.h"
 #include "websocket.h"
+#include "utils.h"
 
 #include <netinet/in.h>
 #include <openssl/sha.h>
 #include <openssl/ssl.h>
 #include <pthread.h>
+
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
 
 char* ws_key_parse(const char* buffer){
    char *p, *token, *res = malloc(128);
@@ -126,8 +124,8 @@ char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
             offset = 2;
          } else if (frame.payload_len < WS_MAXLEN) {
             buffer[1] = 0x7E; 
-            buffer[2] = (frame.payload_len>> 8) & 0xFF;
-            buffer[3] =  frame.payload_len& 0xFF;
+            buffer[2] = (frame.payload_len >> 8) & 0xFF;
+            buffer[3] =  frame.payload_len & 0xFF;
             offset = 4;
          } else {
             error(__func__, "buffer length exceeds");
@@ -198,41 +196,44 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
    logger(__func__, "WebSocket request");
    
    ws = ws_key_parse(buffer);
-
    if (ws == NULL) 
       error(__func__, "error in parsing WS key");
-
+   
    pthread_mutex_lock(&user->mutex);
- 
    user->is_ws = 1;
-   req->code = 101;
    user->ws_state = WS_CONNECT;
+   req->code = 101;
    req->header = "Switching Protocols";
    req->accept = ws_create_accept(ws);
    
    if (!is_connection_exists(user)){
-      pthread_mutex_lock(&GLOBAL.mutex);
-      user->ws_id = GLOBAL.connections_size;
-      if (GLOBAL.connections_size+1 < QUERY)
+      if (GLOBAL.connections_size+1 >= QUERY)
+         error(__func__, "limit of connections");
+      else {
+         user->ws_id = GLOBAL.connections_size;
          GLOBAL.connections[GLOBAL.connections_size++] = user;
-      
-      logger("new connection", user->addr);
-      pthread_mutex_unlock(&GLOBAL.mutex);
-   }
-   
+      }
+   } 
    pthread_mutex_unlock(&user->mutex);
    free(ws);
 }
 
 int is_connection_exists(user_t *user){
+
+   pthread_mutex_lock(&GLOBAL.mutex);
+
    for (int i = 0; i < GLOBAL.connections_size; i++){
       user_t *u = GLOBAL.connections[i];
-      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws){
+      if (strcmp(u->addr, user->addr) == 0 && !u->is_ws)
+      {
          user->username = u->username;
          u = user;
          GLOBAL.connections[i] = u;
+         pthread_mutex_unlock(&GLOBAL.mutex);
          return 1;
       } 
    }
+
+   pthread_mutex_unlock(&GLOBAL.mutex);
    return 0;
 }
