@@ -5,27 +5,45 @@
 #include <ctype.h>
 #include <limits.h>
 #include <openssl/ssl.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
-void init_server(int port, int *sockfd, struct sockaddr_in *servaddr, size_t sz){
-   char message[32]; int enable = 1;
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
-   logger((char*)__func__, message);
+int init_server(char* host, char* port, struct addrinfo *servaddr){
+   int enable = 1, err, sockfd;
+   struct addrinfo hints; 
 
-   ASSERT((*sockfd = socket(AF_INET, SOCK_STREAM, 0)));
-   ASSERT(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
-   bzero(servaddr, sz);
-   servaddr->sin_port = htons(port);
-   servaddr->sin_family = AF_INET;
-   servaddr->sin_addr.s_addr = INADDR_ANY; 
-
-   ASSERT(bind(*sockfd, (const struct sockaddr*)servaddr, sz));
-   ASSERT(listen(*sockfd, QUERY));
+   bzero(&hints, sizeof(hints));
+   hints.ai_flags = AI_PASSIVE;
+   hints.ai_family = AF_UNSPEC;
+   hints.ai_socktype = SOCK_STREAM;
    
-   sprintf(message, "SERVER IS RUNNING\nPORT: %d", port);
+   if ((err = getaddrinfo(host, port, &hints, &servaddr)) != 0){
+      printf("[-] ERROR in getaddrinfo(%s): %s\n", __func__, gai_strerror(err));
+      exit(-1);
+   }
+   do {
+      ASSERT((sockfd = socket(servaddr->ai_family, servaddr->ai_socktype, servaddr->ai_protocol)));
+      ASSERT(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
+      ASSERT((err = bind(sockfd, servaddr->ai_addr, servaddr->ai_addrlen)));
+      if (err == 0) break;
+      close(sockfd);
+   } while ((servaddr->ai_next));
+
+   ASSERT(listen(sockfd, QUERY));
+   
+   printf("[+] %s is running on port %s ", host, port);
+   switch(servaddr->ai_family){
+      case AF_INET:
+         printf("with IPv4\n");
+         return sockfd;
+      case AF_INET6:
+         printf("with IPv6\n");
+         return sockfd;
+   }
 }
 
 char* get_str_addr(struct sockaddr_in addr){

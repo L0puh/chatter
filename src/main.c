@@ -18,7 +18,8 @@ int main(int argc, char* argv[]){
    uint8_t options;
    int sockfd, client_sockfd;
    SSL_CTX* ctx;
-   struct sockaddr_in servaddr, cliaddr;
+   struct addrinfo *servaddr;
+   struct sockaddr_storage cliaddr;
 
    print_usage(argc);
    options = get_options(argc, argv);
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]){
    GLOBAL.connections_size = 0;
 
    pthread_mutex_init(&GLOBAL.mutex, 0);
-   init_server(atoi(argv[1]), &sockfd, &servaddr, sizeof(servaddr));
+   sockfd = init_server(argv[1], argv[2], servaddr);
    
    cliaddr_sz = sizeof(cliaddr); 
   
@@ -48,9 +49,10 @@ int main(int argc, char* argv[]){
          user->is_ssl = 0;
          user->SSL_sockfd = NULL;
       }
+      struct sockaddr_in *sin = (struct sockaddr_in *)&cliaddr;
       user->sockfd = client_sockfd;
-      user->addr = get_str_addr(cliaddr);
-      user->port = ntohs(cliaddr.sin_port);
+      user->addr = get_str_addr(*sin);
+      user->port = ntohs(sin->sin_port);
       user->current_page = GLOBAL.DEFAULT_PAGE;
       user->is_ws = 0;
       user->username = user->addr;

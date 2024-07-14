@@ -83,9 +83,9 @@ int is_contain(char* message, char symbol){
 }
 
 void print_usage(int argc){
-   if (argc < 2){
-      printf("usage: ./server <PORT>\n");
-      printf("options: --SSL\n");
+   if (argc < 3){
+      printf("usage: ./server <host> <port or service>\n");
+      printf("options:\n\t--SSL - enable secure connection\n");
       exit(0);
    }
 }
