@@ -11,7 +11,7 @@ tiny web chat application in pure c
 
 ### install && run:
 ```shell
-make . && ./server <PORT>
+make . && ./server <HOST> <PORT>
 ```
 <details><summary><b>with SSL</b></summary>
   
