@@ -29,6 +29,41 @@ void write_to_file(const char* filename, char* input, char* mode){
    fclose(f);
 }
 
+char* get_binary(const char* filename, size_t *length){
+   FILE *fp;
+   char *path;
+   char *buffer;
+   int size;
+
+   path = malloc(128);
+   sprintf(path, "%s/%s", DIR, filename);
+   fp = fopen(path, "rb");
+   if (fp == NULL){
+      error(filename, "cannot be found");
+      return NULL;
+   }
+
+   fseek(fp, 0, SEEK_END);
+   size = ftell(fp);
+   rewind(fp);
+
+   if((buffer = malloc(size + 1)) == NULL){
+      fclose(fp);
+      error(__func__, "failed allocation");
+      return NULL;
+   }
+   if(fread(buffer, sizeof(unsigned char), size, fp) != size){
+      fclose(fp);
+      error(__func__, "failed fread");
+      free(buffer);
+      return NULL;
+   }
+   fclose(fp);
+   buffer[size] = 0;
+   *length = size+1;
+   return buffer;
+}
+
 char* get_file_content(const char* filename, size_t *init_size){
    FILE *file;
    char ch, *string, name[64]; 
@@ -92,8 +127,8 @@ void print_usage(int argc){
 
 uint8_t get_options(int argc, char* argv[]){
    uint8_t options = 0;
-   if (argc == 3){
-      if (strcmp(argv[2],"--SSL") == 0){
+   if (argc == 4){
+      if (strcmp(argv[3],"--SSL") == 0){
          options |= SSL_flag;
          logger(__func__, "SSL option is enabled");
       }

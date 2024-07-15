@@ -17,18 +17,17 @@ SSL_CTX* init_ssl(){
    SSL_ASSERT(SSL_CTX_use_certificate_file(sslctx, "cert.pem", SSL_FILETYPE_PEM));
    SSL_ASSERT(SSL_CTX_use_PrivateKey_file(sslctx, "key.pem", SSL_FILETYPE_PEM));
 
+   if (!SSL_CTX_check_private_key(sslctx))
+      error(__func__, "key doesn't match certificate");
+
    return sslctx;
 }
 
 SSL* create_ssl(int sockfd, SSL_CTX* sslctx){
    SSL *ssl_sockfd;
 
-   if (!SSL_CTX_check_private_key(sslctx)){
-      error(__func__, "key doesn't match certificate");
-   }
-
    ssl_sockfd = SSL_new(sslctx);
-   SSL_set_fd(ssl_sockfd, sockfd);
+   SSL_ASSERT(SSL_set_fd(ssl_sockfd, sockfd));
    SSL_ASSERT(SSL_accept(ssl_sockfd));
 
    return ssl_sockfd;

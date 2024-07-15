@@ -21,15 +21,15 @@ int init_server(char* host, char* port, struct addrinfo *servaddr){
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
    
-   if ((err = getaddrinfo(host, port, &hints, &servaddr)) != 0){
-      printf("[-] ERROR in getaddrinfo(%s): %s\n", __func__, gai_strerror(err));
-      exit(-1);
-   }
+   if ((err = getaddrinfo(host, port, &hints, &servaddr)) != 0)
+      error(__func__, (char*)gai_strerror(err));
+
    do {
       ASSERT((sockfd = socket(servaddr->ai_family, servaddr->ai_socktype, servaddr->ai_protocol)));
       ASSERT(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)));
       ASSERT((err = bind(sockfd, servaddr->ai_addr, servaddr->ai_addrlen)));
       if (err == 0) break;
+
       close(sockfd);
    } while ((servaddr->ai_next));
 
@@ -38,18 +38,22 @@ int init_server(char* host, char* port, struct addrinfo *servaddr){
    printf("[+] %s is running on port %s ", host, port);
    switch(servaddr->ai_family){
       case AF_INET:
-         printf("with IPv4\n");
+         printf("[IPv4]\n");
          return sockfd;
       case AF_INET6:
-         printf("with IPv6\n");
+         printf("[IPv6]\n");
          return sockfd;
    }
+   return -1;
 }
 
 char* get_str_addr(struct sockaddr_in addr){
-   char* str_addr = malloc(INET_ADDRSTRLEN+1); 
-   ASSERT(inet_ntop(addr.sin_family, &(addr.sin_addr), str_addr, INET_ADDRSTRLEN));
-   str_addr[INET_ADDRSTRLEN] = '\0';
+   size_t len = INET_ADDRSTRLEN;
+   if (addr.sin_family == AF_INET6)
+      len = INET6_ADDRSTRLEN;
+   char* str_addr = malloc(len+1); 
+   ASSERT(inet_ntop(addr.sin_family, &(addr.sin_addr), str_addr, len));
+   str_addr[len] = '\0';
    return str_addr;
 }
 
@@ -143,35 +147,40 @@ char* cookies_parse(char *buffer, char* key){
    return NULL;
 }
 
-void send_response(user_t *user, request_t req){
+void send_response(user_t *user, request_t *req){
    char* format;
    char* result; 
    int bytes_sent, total;
-   result = malloc(req.length + MAXLEN);
-   if (req.code == 200){
-       format = "HTTP/1.1 %d %s\r\nSet-Cookie: %s HttpOnly\r\n"
-                     "Content-Type: %s\r\nContent-Length:%d\r\n\r\n%s\r\n\r\n";
-       sprintf(result, format, req.code, req.header, 
-               req.cookies, req.content_type, 
-               req.length, req.content);
-
+   result = malloc(MAXLEN);
+   if (req->code == 200){
+      format = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n";
+      sprintf(result, format, req->code, req->header, req->content_type, req->length);
    }
-   else if (req.code == 301){
+   else if (req->code == 301){
        format = "HTTP/1.1 %d %s\r\nLocation: %s\r\n\r\n";
-       sprintf(result, format, req.code, req.header, req.location);
+       sprintf(result, format, req->code, req->header, req->location);
        logger(__func__, "Moved Permanently response");
    }
-   else if (req.code == 101){
+   else if (req->code == 101){
       result = ws_create_upgrade(req);
    }
 
    pthread_mutex_lock(&user->mutex);
-   if (user->is_ssl){
-      SSL_ASSERT(SSL_write(user->SSL_sockfd, result, strlen(result)));
-   } else 
-      ASSERT(send(user->sockfd, result, strlen(result), 0));
+   total = strlen(result), bytes_sent = 0;
+   while (bytes_sent < total){
+      if (user->is_ssl){
+         SSL_ASSERT((bytes_sent += SSL_write(user->SSL_sockfd, result, strlen(result))));
+      } else 
+         ASSERT((bytes_sent = send(user->sockfd, result, strlen(result), 0)));
+   }
+   bytes_sent = 0, total = req->length;
+   while(bytes_sent < total){
+      if (user->is_ssl){
+         SSL_ASSERT((bytes_sent += SSL_write(user->SSL_sockfd, req->content, req->length)));
+      } else 
+         ASSERT((bytes_sent = send(user->sockfd, req->content, req->length, 0)));
+   }    
    pthread_mutex_unlock(&user->mutex);
-  
    free(result);  
 }
 

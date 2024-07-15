@@ -12,8 +12,10 @@
 
 struct state GLOBAL;
 
+void get_favicon(user_t *user, request_t *req){
+}
+
 void set_current_page(user_t *user, char* res){
-   if (strcmp(res, "/favicon.ico") == 0) return;
    if (strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0){
       user->current_page = INDEX_PAGE;
       return;
@@ -46,7 +48,16 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                return WS;
             }
             res = header_parse(buffer, bytes, " ");
-            if (is_contain(res, '/')){
+            if (strcmp(res, "/favicon.ico") == 0) {
+               size_t size;
+               req->header = "OK";
+               req->code = 200;
+               req->content_type = "image/x-icon";
+               req->content = get_binary("favicon.ico", &size);
+               req->length = size;
+               req->is_cookie = 0;
+               return OK;
+            } else if (is_contain(res, '/')){
                set_current_page(user, res);
                
                if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
@@ -77,7 +88,7 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
    req->code = 200;
    req->content = get_file_content(user->current_page, 0);
    req->content_type = "text/html";
-   req->cookies = set_cookie("test", "cookie");
+   req->is_cookie = 0;
    req->length = strlen(req->content);
 
    return OK;
@@ -141,7 +152,7 @@ void* handle_client(void* th_user){
    while((bytes = recv_buffer(user, buffer, sizeof(buffer))) > 0){
       if (!user->is_ws){
          res = handle_http_request(user, &req, buffer, bytes);
-         send_response(user, req);
+         send_response(user, &req);
       } else {
          handle_ws_request(user, buffer, bytes);
       }

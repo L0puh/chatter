@@ -40,12 +40,12 @@ char* ws_create_accept(const char* key){
    return base64_encode((const unsigned char*) digest, SHA_DIGEST_LENGTH);
 }
 
-char* ws_create_upgrade(const request_t req){
+char* ws_create_upgrade(const request_t *req){
    char *format, *result;
    result = malloc(MAXLEN);
    format = "HTTP/1.1 %d %s\r\nUpgrade: websocket\r\n"
                   "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n";
-   sprintf(result, format, req.code, req.header, req.accept);
+   sprintf(result, format, req->code, req->header, req->accept);
    return result;
 }
 

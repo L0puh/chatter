@@ -5,6 +5,7 @@
 #include "websocket.h"
 #include "ssl.h"
 
+#include <netdb.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +38,6 @@ int main(int argc, char* argv[]){
    sockfd = init_server(argv[1], argv[2], servaddr);
    
    cliaddr_sz = sizeof(cliaddr); 
-  
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
       
@@ -63,6 +63,7 @@ int main(int argc, char* argv[]){
    }
    ws_send_close();
    SSL_CTX_free(ctx);
+   freeaddrinfo(servaddr);
    connections_cleanup();
    close(sockfd);
    return 0;
