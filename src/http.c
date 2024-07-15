@@ -153,7 +153,7 @@ void send_response(user_t *user, request_t *req){
    int bytes_sent, total;
    result = malloc(MAXLEN);
    if (req->code == 200){
-      format = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n";
+      format = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n";
       sprintf(result, format, req->code, req->header, req->content_type, req->length);
    }
    else if (req->code == 301){
@@ -164,7 +164,6 @@ void send_response(user_t *user, request_t *req){
    else if (req->code == 101){
       result = ws_create_upgrade(req);
    }
-
    pthread_mutex_lock(&user->mutex);
    total = strlen(result), bytes_sent = 0;
    while (bytes_sent < total){
@@ -174,7 +173,7 @@ void send_response(user_t *user, request_t *req){
          ASSERT((bytes_sent = send(user->sockfd, result, strlen(result), 0)));
    }
    bytes_sent = 0, total = req->length;
-   while(bytes_sent < total){
+   while(req->content && bytes_sent < total){
       if (user->is_ssl){
          SSL_ASSERT((bytes_sent += SSL_write(user->SSL_sockfd, req->content, req->length)));
       } else 

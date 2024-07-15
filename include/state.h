@@ -29,9 +29,9 @@ typedef enum {
 } options_flags;
 
 typedef struct {
-   int length;
    int code;
    int is_cookie;
+   size_t length;
    char* header; 
    char* accept;
    char* content_type;

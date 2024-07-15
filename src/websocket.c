@@ -200,10 +200,11 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
       error(__func__, "error in parsing WS key");
    
    user->is_ws = 1;
-   req->code = 101;
    user->ws_state = WS_CONNECT;
+   req->code = 101;
    req->header = "Switching Protocols";
    req->accept = ws_create_accept(ws);
+   req->length = 0;
    
    if (!is_connection_exists(user)){
       pthread_mutex_lock(&GLOBAL.mutex);

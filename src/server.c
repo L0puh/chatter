@@ -49,12 +49,10 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             }
             res = header_parse(buffer, bytes, " ");
             if (strcmp(res, "/favicon.ico") == 0) {
-               size_t size;
                req->header = "OK";
                req->code = 200;
                req->content_type = "image/x-icon";
-               req->content = get_binary("favicon.ico", &size);
-               req->length = size;
+               req->content = get_file_content("favicon.ico", &req->length, "rb");
                req->is_cookie = 0;
                return OK;
             } else if (is_contain(res, '/')){
@@ -86,10 +84,9 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
 
    req->header = "OK";
    req->code = 200;
-   req->content = get_file_content(user->current_page, 0);
+   req->content = get_file_content(user->current_page, &req->length, "r");
    req->content_type = "text/html";
    req->is_cookie = 0;
-   req->length = strlen(req->content);
 
    return OK;
 }

@@ -10,9 +10,9 @@
 #define LOG_ON /*enable logging*/
 
 void update_html(){
-   char* header = get_file_content(HEADER_PAGE, 0);
-   char* sender = get_file_content(SENDER_PAGE, 0);
-   char* text   = get_file_content(DATABASE_FILE, 0); 
+   char* header = get_file_content(HEADER_PAGE,   NULL, "r");
+   char* sender = get_file_content(SENDER_PAGE,   NULL, "r");
+   char* text   = get_file_content(DATABASE_FILE, NULL, "r"); 
    write_to_file(INDEX_PAGE, header, "w");
    if (strcmp(text, "") != 0)
       write_to_file(INDEX_PAGE, text,   "a");
@@ -29,7 +29,8 @@ void write_to_file(const char* filename, char* input, char* mode){
    fclose(f);
 }
 
-char* get_binary(const char* filename, size_t *length){
+
+char* get_file_content(const char* filename, size_t *length, char* mode){
    FILE *fp;
    char *path;
    char *buffer;
@@ -37,7 +38,7 @@ char* get_binary(const char* filename, size_t *length){
 
    path = malloc(128);
    sprintf(path, "%s/%s", DIR, filename);
-   fp = fopen(path, "rb");
+   fp = fopen(path, mode);
    if (fp == NULL){
       error(filename, "cannot be found");
       return NULL;
@@ -60,53 +61,9 @@ char* get_binary(const char* filename, size_t *length){
    }
    fclose(fp);
    buffer[size] = 0;
-   *length = size+1;
+   if (length != NULL)
+      *length = size+1;
    return buffer;
-}
-
-char* get_file_content(const char* filename, size_t *init_size){
-   FILE *file;
-   char ch, *string, name[64]; 
-   size_t size = MAXLEN, total_cnt = 0;
-
-   if (init_size != 0 && init_size != NULL) 
-      size = *init_size;
-
-   if ((string = malloc(size * CHAR_BIT)) == NULL) {
-      error(__func__, "failed allocation of string");
-      return NULL;
-   }
-
-   bzero(string, strlen(string));
-   sprintf(name, "%s/%s", DIR, filename);
-
-   file = fopen(name, "r");
-   if (file == NULL){
-      error(__func__, name);
-      return "";
-   }
-
-    while((ch = fgetc(file)) != EOF){
-       string[total_cnt++] = ch;
-       if (total_cnt >= size){
-          size+=MAXLEN;
-          if ((string = realloc(string, size * CHAR_BIT)) == NULL){
-             error(__func__, "failed realloc");
-             return NULL;
-          }
-          logger(__func__, "realloc new memory");
-       }
-    }
-
-  
-   if (init_size != 0 && init_size != NULL)
-      *init_size = size;
-   if (total_cnt < size) 
-      string[total_cnt] = '\0';
-
-   fclose(file);
-   return string;
-   
 }
 
 
