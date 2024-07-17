@@ -1,4 +1,5 @@
 #include "http.h"
+#include "state.h"
 #include "utils.h"
 #include "websocket.h"
 
@@ -148,29 +149,21 @@ char* cookies_parse(char *buffer, char* key){
 }
 
 void send_response(user_t *user, request_t *req){
-   char* format;
-   char* result; 
+   char* response;
    int bytes_sent, total;
-   result = malloc(MAXLEN);
-   if (req->code == 200){
-      format = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n";
-      sprintf(result, format, req->code, req->header, req->content_type, req->length);
-   }
-   else if (req->code == 301){
-       format = "HTTP/1.1 %d %s\r\nLocation: %s\r\n\r\n";
-       sprintf(result, format, req->code, req->header, req->location);
-       logger(__func__, "Moved Permanently response");
-   }
-   else if (req->code == 101){
-      result = ws_create_upgrade(req);
-   }
+   
+   response = malloc(MAXLEN*CHAR_BIT);
+   create_response(req, response, &total);
+   
+   if (total == 0) return;
    pthread_mutex_lock(&user->mutex);
-   total = strlen(result), bytes_sent = 0;
+   bytes_sent = 0;
+  
    while (bytes_sent < total){
       if (user->is_ssl){
-         SSL_ASSERT((bytes_sent += SSL_write(user->SSL_sockfd, result, strlen(result))));
+         SSL_ASSERT((bytes_sent += SSL_write(user->SSL_sockfd, response, total)));
       } else 
-         ASSERT((bytes_sent = send(user->sockfd, result, strlen(result), 0)));
+         ASSERT((bytes_sent = send(user->sockfd, response, total, 0)));
    }
    bytes_sent = 0, total = req->length;
    while(req->content && bytes_sent < total){
@@ -180,7 +173,39 @@ void send_response(user_t *user, request_t *req){
          ASSERT((bytes_sent = send(user->sockfd, req->content, req->length, 0)));
    }    
    pthread_mutex_unlock(&user->mutex);
-   free(result);  
+   free(response);  
+}
+
+void create_response(request_t *req, char* response, int *length){
+   char *format, *result;
+   result = malloc(MAXLEN*CHAR_BIT);
+   switch(req->code){
+      case OK:
+         format = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n";
+         sprintf(result, format, req->code, req->header, req->content_type, req->length);
+         break;
+      case MOVED_PERMANENTLY:
+         format = "HTTP/1.1 %d %s\r\nLocation: %s\r\n";
+         sprintf(result, format, req->code, req->header, req->location);
+         break;
+      case SWITCHING_PROTOCOLS:
+         format = "HTTP/1.1 %d %s\r\nUpgrade: websocket\r\n"
+                  "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n";
+         sprintf(result, format, req->code, req->header, req->accept);
+         break;
+      default:
+         error(__func__, "this code isn't supported yet");
+         *length = 0;
+         return;
+   }
+   if (req->is_cookie){
+      sprintf(result, "%sSet-Cookie: %s\r\n\r\n", result, req->cookies);
+   } else 
+      sprintf(result, "%s\r\n", result);
+
+   *length = strlen(result);
+   strcpy(response, result);
+   free(result);
 }
 
 int recv_buffer(user_t *user, char *buffer, size_t buffer_size){

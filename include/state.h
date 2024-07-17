@@ -13,7 +13,6 @@ typedef enum {
    NONE,
    GET,
    POST,
-   OK,
    WS,
    NOT_FOUND,
    ERROR,
@@ -21,6 +20,10 @@ typedef enum {
    NAME,
    TEXT,
    WS_CONNECT,
+   
+   OK = 200,
+   MOVED_PERMANENTLY = 300,
+   SWITCHING_PROTOCOLS = 101,
 } req_type;
 
 
@@ -34,11 +37,10 @@ typedef struct {
    size_t length;
    char* header; 
    char* accept;
-   char* content_type;
    char* cookies;
    char* content;
    char* location;
-
+   char* content_type;
 } request_t;
 
 

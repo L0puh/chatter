@@ -12,9 +12,6 @@
 
 struct state GLOBAL;
 
-void get_favicon(user_t *user, request_t *req){
-}
-
 void set_current_page(user_t *user, char* res){
    if (strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0){
       user->current_page = INDEX_PAGE;
@@ -86,7 +83,6 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
    req->code = 200;
    req->content = get_file_content(user->current_page, &req->length, "r");
    req->content_type = "text/html";
-   req->is_cookie = 0;
 
    return OK;
 }
