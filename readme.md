@@ -1,5 +1,4 @@
-### CHATTER
-
+![](https://github.com/L0puh/chatter/blob/master/resources/logo.png)
 ### about
 tiny web chat application in pure c
 
@@ -8,6 +7,7 @@ tiny web chat application in pure c
 - websocket server (based on [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455))
 - SSL support with openSSL for https and wss
 - IPv6 support
+- MIME support: html/htm, jpg/jpeg, png, css, ico
 
 ### install && run:
 ```shell
