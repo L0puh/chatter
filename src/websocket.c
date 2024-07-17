@@ -103,7 +103,6 @@ char* ws_recv_text(char* buffer, uint64_t msglen, uint16_t offset){
 char* ws_get_frame(ws_frame_t frame, uint64_t *res_size){
    int bytes, offset;
    char* buffer = malloc(MAXLEN);
-   
    bzero(buffer, MAXLEN);
    buffer[0] = FIN | frame.opcode;
    *res_size = 0;

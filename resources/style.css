@@ -1,0 +1,39 @@
+body {
+   text-align: center;
+   font-family: monospace;
+}
+.sender {
+   height: 200px;
+   width: 800px;
+   position: fixed;
+   top: 100%;
+   left: 50%;
+   margin-top: -100px;
+   margin-left: -400px;
+   
+}
+#message_field {
+   height: 30px;
+}
+#output {
+   overflow: auto;
+   width: fit-content;
+   display: inline-table;
+   padding: .5em .8em;
+   line-height: 1.5;
+   border-radius: 6px;
+
+}
+#output > p {
+   overflow-wrap: break-word;
+}
+#output span {
+   color: blue;
+}
+#output span.error {
+   color: red;
+}
+
+.logo{
+   width: 100px;
+}

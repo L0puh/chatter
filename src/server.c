@@ -35,8 +35,13 @@ void set_current_page(user_t *user, char* res){
 
 
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
-   char *res;
+   char *res, *post;
    req_type type = get_type_request(buffer, bytes);
+
+   req->header = "OK";
+   req->code = 200;
+   req->is_cookie = 0;
+   
    if (bytes > 0){
       switch(type){
          case GET:
@@ -46,18 +51,19 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             }
             res = header_parse(buffer, bytes, " ");
             if (strcmp(res, "/favicon.ico") == 0) {
-               req->header = "OK";
-               req->code = 200;
-               req->content_type = "image/x-icon";
+               req->content_type = get_content_type(res);
                req->content = get_file_content("favicon.ico", &req->length, "rb");
-               req->is_cookie = 0;
                return OK;
-            } else if (is_contain(res, '/')){
+            } else if (strcmp(res, "/style.css") == 0){
+               req->content_type = get_content_type(res);
+               req->content = get_file_content("style.css", &req->length, "r");
+               return OK;
+            }
+            else if (is_contain(res, '/')){
                set_current_page(user, res);
-               
                if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
                   logger(__func__, "delete chat history");
-                  system("rm -f resources/text.txt && touch resources/text.txt"); 
+                  system("rm -f resources/text.txt && touch resources/text.txt");
                   update_html();
                }
             }
@@ -65,11 +71,11 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
          case POST:
             logger(__func__, "POST request");
             
-            res = post_parse(buffer, bytes, "input=");
+            post = post_parse(buffer, bytes, "input=");
             if (res != NULL) {
-               remove_prefix(res, "input=");
-               url_decode(res);
-               write_input(res, strlen(res), user->addr);
+               remove_prefix(post, "input=");
+               url_decode(post);
+               write_input(post, strlen(post), user->username);
             }
             break;
          default:
@@ -79,10 +85,11 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
    }
 
 
-   req->header = "OK";
-   req->code = 200;
-   req->content = get_file_content(user->current_page, &req->length, "r");
-   req->content_type = "text/html";
+   req->content_type = get_content_type(user->current_page);
+   if (strstr(req->content_type, "image") != NULL){
+      req->content = get_file_content(user->current_page, &req->length, "rb");
+   } else
+      req->content = get_file_content(user->current_page, &req->length, "r");
 
    return OK;
 }
@@ -125,6 +132,7 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
                ws_send_broadcast(res, buffer_sz);
             else error(__func__,"corrupted frame");
             free(message);
+            free(res);
          }
          break;
       default:

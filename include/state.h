@@ -89,6 +89,8 @@ static char* available_routs[] = {
    "error.html",
    "websocket.html",
    "websocket_ssl.html",
+   "style.css",
+   "logo.png",
 };
 
 #endif 

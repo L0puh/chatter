@@ -19,5 +19,6 @@ void  recv_loop(int client_sockfd, char* buffer, int *bytes);
 int   recv_buffer(user_t *user, char* buffer, size_t buffer_size);
 void  send_response(user_t *user, request_t *req);
 void  create_response(request_t *req, char* response, int* len);
+char* get_content_type(char* buffer);
 
 #endif

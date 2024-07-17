@@ -222,3 +222,27 @@ int recv_buffer(user_t *user, char *buffer, size_t buffer_size){
 
    return bytes;
 }
+
+char* get_content_type(char* buffer){
+  
+   if (strcmp(buffer, "/") == 0 ) 
+      return "text/html";
+   
+   if (strstr(buffer, "html") != NULL || strstr(buffer, "htm")  != NULL)
+      return "text/html";
+   
+   if (strstr(buffer, "css")  != NULL)
+      return  "text/css";
+
+   if (strstr(buffer, "ico")  != NULL)
+      return "image/x-icon";
+
+   if (strstr(buffer, "jpeg")  != NULL || strstr(buffer, "jpg")  != NULL)
+      return "image/jpeg";
+   
+   if (strstr(buffer, "png")  != NULL)
+      return "image/png";
+
+   error(__func__, "unsupported MIME type");
+   return NULL;
+}
