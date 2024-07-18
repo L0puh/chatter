@@ -80,7 +80,8 @@ char* post_parse(const char* message, size_t sz, const char* symbol){
    }
    return NULL;
 }
-char* header_parse(const char* message, size_t sz, const char* symbol){
+
+char* header_parse(const char* message, size_t sz, const char* symbol, int *is_static){
    char* token; int cur = 0;
    char* res = malloc(sz * CHAR_BIT);
    char* copy_msg = malloc(sz * CHAR_BIT);
@@ -92,6 +93,10 @@ char* header_parse(const char* message, size_t sz, const char* symbol){
       token = strtok(NULL, " ");
       if (cur == 0){
          res = token;
+         if (strstr(token, "/static/") != NULL){
+            *is_static = 1;
+            res+=strlen("/static/");
+         } else *is_static = 0;
          if (res == NULL) 
             res = "";
          return res;

@@ -57,6 +57,7 @@ typedef struct {
 
    char* addr; 
    char* current_page;
+   char* response_page;
    char* username;
    pthread_mutex_t mutex;
 

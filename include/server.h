@@ -8,7 +8,7 @@
 
 #include "state.h"
 
-void  set_current_page(user_t *user, char *input);
+void     set_current_page(user_t *user, char *buffer);
 
 void*    handle_client(void* user);
 void     handle_ws_request(user_t *user, char* buffer, int bytes);

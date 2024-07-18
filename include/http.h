@@ -9,7 +9,7 @@
 
 int   init_server(char* host, char* addr, struct addrinfo *servaddr);
 int   get_type_request(char* message, size_t sz);
-char* header_parse(const char* message, size_t sz, const char* symbol);
+char* header_parse(const char* message, size_t sz, const char* symbol, int* is_static);
 char* post_parse(const char* message, size_t sz, const char* symbol);
 char* get_str_addr(struct sockaddr_in addr);
 char* set_cookie(char* param, char* value);
