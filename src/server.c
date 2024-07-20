@@ -95,12 +95,21 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
    return OK;
 }
 
-
+void send_text_frame(char* message, int len){
+   ws_frame_t frame;
+   uint64_t buffer_sz;
+   frame.opcode = WS_TEXT;
+   frame.payload_len = len;
+   frame.data = message;
+   char* res = ws_get_frame(frame, &buffer_sz);
+   if (res != NULL && buffer_sz > 0)
+      ws_send_broadcast(res, buffer_sz);
+   else error(__func__,"corrupted frame");
+   free(res);
+}
 void handle_ws_request(user_t *user, char* buffer, int bytes){
-   int len;
    req_type res;
    char* message;
-   uint64_t buffer_sz;
    ws_frame_t frame;
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
@@ -115,6 +124,10 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
          user->is_ws = 0;
          user->ws_state = WS_CLOSE;
          pthread_mutex_unlock(&user->mutex);
+         message = malloc(MAXLEN);
+         sprintf(message, "%s|left chat room", user->username);
+         send_text_frame(message, strlen(message));
+         free(message);
          break;
       case OK:
          res = ws_parse_message(ws_buffer);
@@ -123,17 +136,8 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
          else{
             message = malloc(MAXLEN);
             sprintf(message, "%s|%s", user->username, ws_buffer);
-            len = strlen(message);
-            frame.opcode = WS_TEXT;
-            frame.payload_len = len;
-            strcpy(frame.data, message);
-            
-            char* res = ws_get_frame(frame, &buffer_sz);
-            if (res != NULL && buffer_sz > 0)
-               ws_send_broadcast(res, buffer_sz);
-            else error(__func__,"corrupted frame");
+            send_text_frame(message, strlen(message));
             free(message);
-            free(res);
          }
          break;
       default:
