@@ -228,26 +228,38 @@ int recv_buffer(user_t *user, char *buffer, size_t buffer_size){
    return bytes;
 }
 
-char* get_content_type(char* buffer){
+char* get_content_type(char* buffer, req_type* type){
   
-   if (strcmp(buffer, "/") == 0 ) 
+   if (strcmp(buffer, "/") == 0 ) {
+      *type = TEXT;   
       return "text/html";
+   }
    
-   if (strstr(buffer, "html") != NULL || strstr(buffer, "htm")  != NULL)
+   if (strstr(buffer, "html") != NULL || strstr(buffer, "htm")  != NULL){
+      *type = TEXT;   
       return "text/html";
+   }
    
-   if (strstr(buffer, "css")  != NULL)
+   if (strstr(buffer, "css")  != NULL){
+      *type = CSS;
       return  "text/css";
+   }
 
-   if (strstr(buffer, "ico")  != NULL)
+   if (strstr(buffer, "ico")  != NULL){
+      *type = IMAGE;
       return "image/x-icon";
+   }
 
-   if (strstr(buffer, "jpeg")  != NULL || strstr(buffer, "jpg")  != NULL)
+   if (strstr(buffer, "jpeg")  != NULL || strstr(buffer, "jpg")  != NULL){
+      *type = IMAGE;
       return "image/jpeg";
+   }
    
-   if (strstr(buffer, "png")  != NULL)
+   if (strstr(buffer, "png")  != NULL){
+      *type = IMAGE;
       return "image/png";
-
+   }
+   *type = NONE;
    error(__func__, "unsupported MIME type");
    return NULL;
 }

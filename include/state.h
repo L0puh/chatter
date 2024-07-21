@@ -9,6 +9,7 @@
 
 extern struct state GLOBAL;
 
+
 typedef enum {
    NONE,
    GET,
@@ -18,7 +19,10 @@ typedef enum {
    ERROR,
    CLOSE,
    NAME,
+   CSS,
    TEXT,
+   AUDIO,
+   IMAGE,
    WS_CONNECT,
    
    OK = 200,
@@ -33,6 +37,7 @@ typedef enum {
 
 typedef struct {
    int code;
+   req_type content_type_i;
    int is_cookie;
    size_t length;
    char* header; 
@@ -41,6 +46,7 @@ typedef struct {
    char* content;
    char* location;
    char* content_type;
+
 } request_t;
 
 
@@ -65,6 +71,11 @@ typedef struct {
 
 struct state{
    int SERVER_RUNNING;
+   
+   char* STYLE_DIR;
+   char* IMAGE_DIR;
+   char* HTML_DIR;
+
    char* DEFAULT_PAGE;
    char* DEFAULT_WEBSOCKET_PAGE;
    int connections_size;
@@ -81,7 +92,6 @@ static char* ERROR_PAGE = "error.html";
 static char* HEADER_PAGE = "header.html";
 static char* SENDER_PAGE = "sender.html";
 static char* DATABASE_FILE = "text.txt"; 
-static char* DIR = "resources";
 
 static char* available_routs[] = {
    "",

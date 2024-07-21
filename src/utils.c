@@ -1,7 +1,6 @@
 #include "utils.h"
 #include "state.h"
 
-#include <limits.h>
 #include <openssl/err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,18 +9,18 @@
 #define LOG_ON /*enable logging*/
 
 void update_html(){
-   char* header = get_file_content(HEADER_PAGE,   NULL, "r");
-   char* sender = get_file_content(SENDER_PAGE,   NULL, "r");
-   char* text   = get_file_content(DATABASE_FILE, NULL, "r"); 
-   write_to_file(INDEX_PAGE, header, "w");
+   char* header = get_file_content(HEADER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
+   char* sender = get_file_content(SENDER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
+   char* text   = get_file_content(DATABASE_FILE, NULL, "r", GLOBAL.HTML_DIR);;
+   write_to_file(INDEX_PAGE, header, "w", GLOBAL.HTML_DIR);
    if (strcmp(text, "") != 0)
-      write_to_file(INDEX_PAGE, text,   "a");
-   write_to_file(INDEX_PAGE, sender, "a");
+      write_to_file(INDEX_PAGE, text,   "a", GLOBAL.HTML_DIR);
+   write_to_file(INDEX_PAGE, sender, "a", GLOBAL.HTML_DIR);
 }
 
-void write_to_file(const char* filename, char* input, char* mode){
+void write_to_file(const char* filename, char* input, char* mode, char* path){
    char name[32];
-   sprintf(name, "%s/%s", DIR, filename);
+   sprintf(name, "%s/%s", path, filename);
    FILE* f = fopen(name, mode);
    if (f == NULL) 
       error(__func__, "file open error");
@@ -30,17 +29,17 @@ void write_to_file(const char* filename, char* input, char* mode){
 }
 
 
-char* get_file_content(const char* filename, size_t *length, char* mode){
+char* get_file_content(const char* filename, size_t *length, char* mode, char* filepath){
    FILE *fp;
    char *path;
    char *buffer;
    int size;
 
    path = malloc(128);
-   sprintf(path, "%s/%s", DIR, filename);
+   sprintf(path, "%s/%s", filepath, filename);
    fp = fopen(path, mode);
    if (fp == NULL){
-      error(filename, "cannot be found");
+      error(path, "cannot be found");
       return NULL;
    }
 
@@ -108,7 +107,7 @@ void write_input(char* buffer, size_t sz, char* data){
 
    new = malloc(MAXLEN);
    sprintf(new, format, data, buffer);
-   write_to_file(DATABASE_FILE, new, "a");
+   write_to_file(DATABASE_FILE, new, "a", GLOBAL.HTML_DIR);
    update_html();
    free(new);
 }

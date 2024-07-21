@@ -15,5 +15,6 @@ void     handle_ws_request(user_t *user, char* buffer, int bytes);
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes);
 
 void connections_cleanup();
+void send_text_frame(char* message, int len);
 
 #endif

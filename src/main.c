@@ -31,6 +31,10 @@ int main(int argc, char* argv[]){
       GLOBAL.DEFAULT_WEBSOCKET_PAGE = "websocket.html";
 
    GLOBAL.SERVER_RUNNING = 1;
+   GLOBAL.STYLE_DIR = "resources/style/";
+   GLOBAL.IMAGE_DIR = "resources/images/";
+   GLOBAL.HTML_DIR  = "resources/html/";
+
    GLOBAL.DEFAULT_PAGE = INDEX_PAGE;
    GLOBAL.connections_size = 0;
 

@@ -52,12 +52,12 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             }
             res = header_parse(buffer, bytes, " ", &is_static);
             if (strcmp(res, "favicon.ico") == 0 && is_static) {
-               req->content_type = get_content_type(res);
-               req->content = get_file_content("favicon.ico", &req->length, "rb");
+               req->content_type = get_content_type(res, &req->content_type_i);
+               req->content = get_file_content("favicon.ico", &req->length, "rb", GLOBAL.IMAGE_DIR);
                return OK;
             } else if (strcmp(res, "style.css") == 0 && is_static){
-               req->content_type = get_content_type(res);
-               req->content = get_file_content("style.css", &req->length, "r");
+               req->content_type = get_content_type(res, &req->content_type_i);
+               req->content = get_file_content("style.css", &req->length, "r", GLOBAL.STYLE_DIR);
                return OK;
             } else if (is_contain(res, '/') && !is_static){
                 set_current_page(user, res);
@@ -86,11 +86,17 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             return NONE;
       }
    }
-   req->content_type = get_content_type(user->response_page);
-   if (strstr(req->content_type, "image") != NULL){
-      req->content = get_file_content(user->response_page, &req->length, "rb");
-   } else
-      req->content = get_file_content(user->response_page, &req->length, "r");
+   req->content_type = get_content_type(user->response_page, &req->content_type_i);
+   switch(req->content_type_i){
+      case IMAGE:
+         req->content = get_file_content(user->response_page, &req->length, "rb", GLOBAL.IMAGE_DIR);
+         break;
+      case CSS:
+         req->content = get_file_content(user->response_page, &req->length, "r", GLOBAL.STYLE_DIR);
+         break;
+      default:
+         req->content = get_file_content(user->response_page, &req->length, "r", GLOBAL.HTML_DIR);
+   } 
 
    return OK;
 }
