@@ -51,7 +51,7 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                return WS;
             }
             res = header_parse(buffer, bytes, " ", &is_static);
-            if (strcmp(res, "favicon.ico") == 0 && is_static) {
+            if (strcmp(res, "favicon.ico") == 0){
                req->content_type = get_content_type(res, &req->content_type_i);
                req->content = get_file_content("favicon.ico", &req->length, "rb", GLOBAL.IMAGE_DIR);
                return OK;
@@ -64,7 +64,7 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                 user->response_page = user->current_page;
                 if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
                   logger(__func__, "delete chat history");
-                  system("rm -f resources/text.txt && touch resources/text.txt");
+                  system("rm -f resources/html/text.txt && touch resources/html/text.txt");
                   update_html();
                }
 
@@ -181,4 +181,12 @@ void connections_cleanup(){
    for (int i = 0; i < GLOBAL.connections_size; i++)
       free(GLOBAL.connections[i]);
    GLOBAL.connections_size = 0;
+}
+
+
+void handle_termination(int sig){
+   ws_send_close();
+   connections_cleanup();
+   logger(__func__, "terminating the program");
+   exit(0);
 }

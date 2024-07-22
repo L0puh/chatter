@@ -7,6 +7,7 @@
 
 #include <netdb.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,7 @@ int main(int argc, char* argv[]){
    sockfd = init_server(argv[1], argv[2], servaddr);
    
    cliaddr_sz = sizeof(cliaddr); 
+   signal(SIGINT, handle_termination);
    while(GLOBAL.SERVER_RUNNING){ 
       ASSERT((client_sockfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_sz)));
       

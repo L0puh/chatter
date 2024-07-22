@@ -16,5 +16,6 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
 
 void connections_cleanup();
 void send_text_frame(char* message, int len);
+void handle_termination(int sig);
 
 #endif

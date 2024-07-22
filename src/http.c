@@ -1,7 +1,6 @@
 #include "http.h"
 #include "state.h"
 #include "utils.h"
-#include "websocket.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -263,3 +262,4 @@ char* get_content_type(char* buffer, req_type* type){
    error(__func__, "unsupported MIME type");
    return NULL;
 }
+
