@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "state.h"
+#include "db.h"
 
 #include <openssl/err.h>
 #include <stdio.h>
@@ -123,6 +124,11 @@ void logger(const char* where, char* what){
 void errorl(const char* where, char* file, int line){
 #ifdef LOG_ON
     printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, strerror(errno));
+#endif
+}
+void db_errorl(const char* where, char* file, int line){
+#ifdef LOG_ON
+    printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, db_error());
 #endif
 }
 void ssl_error(const char* where, char* file, int line){

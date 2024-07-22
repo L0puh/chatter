@@ -1,10 +1,10 @@
 #ifndef STATE_H
 #define STATE_H
-
 #define QUERY 10
 #define MAXLEN 4096
 
 #include <pthread.h>
+#include <libpq-fe.h>
 #include <openssl/ssl.h>
 
 extern struct state GLOBAL;
@@ -70,6 +70,7 @@ typedef struct {
 } user_t;
 
 struct state{
+   PGconn* DB;
    int SERVER_RUNNING;
    
    char* STYLE_DIR;

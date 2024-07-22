@@ -1,3 +1,4 @@
+#include "db.h"
 #include "http.h"
 #include "utils.h"
 #include "server.h"
@@ -24,6 +25,7 @@ int main(int argc, char* argv[]){
    struct sockaddr_storage cliaddr;
 
    print_usage(argc);
+   
    options = get_options(argc, argv);
    if (options & SSL_flag){
       ctx = init_ssl();
@@ -41,6 +43,10 @@ int main(int argc, char* argv[]){
 
    pthread_mutex_init(&GLOBAL.mutex, 0);
    sockfd = init_server(argv[1], argv[2], servaddr);
+
+#ifdef WITH_DB
+   db_init();
+#endif
    
    cliaddr_sz = sizeof(cliaddr); 
    signal(SIGINT, handle_termination);

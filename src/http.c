@@ -1,6 +1,7 @@
 #include "http.h"
 #include "state.h"
 #include "utils.h"
+#include "db.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -34,7 +35,10 @@ int init_server(char* host, char* port, struct addrinfo *servaddr){
    } while ((servaddr->ai_next));
 
    ASSERT(listen(sockfd, QUERY));
-   
+
+#ifdef WITH_DB
+   printf("[+] PostgreSQL version: %d\n", db_version());
+#endif
    printf("[+] %s is running on port %s ", host, port);
    switch(servaddr->ai_family){
       case AF_INET:
