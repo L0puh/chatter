@@ -1,4 +1,4 @@
-![](https://github.com/L0puh/chatter/blob/master/resources/logo.png)
+![](https://github.com/L0puh/chatter/blob/master/resources/images/logo.png)
 ### about
 tiny web chat application in pure c
 
