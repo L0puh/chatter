@@ -187,6 +187,9 @@ void connections_cleanup(){
 void handle_termination(int sig){
    ws_send_close();
    connections_cleanup();
+#ifdef WITH_DB
+   PQfinish(GLOBAL.DB);
+#endif
    logger(__func__, "terminating the program");
    exit(0);
 }

@@ -6,7 +6,7 @@
 #include <string.h>
 
 #define ASSERT(res) { if (res < 0){ errorl((char*)__func__, (char*) __FILE__, __LINE__); }}
-#define DB_ASSERT(res, st) { if (res != st){ db_errorl((char*)__func__, (char*) __FILE__, __LINE__); }}
+#define DB_ASSERT(res, st) { if (PQresultStatus(res) != st){ db_errorl((char*)__func__, (char*) __FILE__, __LINE__); }}
 #define SSL_ASSERT(res) { if (res < 0){ ssl_error((char*)__func__, (char*) __FILE__, __LINE__); }}
 #define LEN(arr) sizeof(arr)/sizeof(arr[0])
 
