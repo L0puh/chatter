@@ -17,6 +17,9 @@ void update_html(){
    if (strcmp(text, "") != 0)
       write_to_file(INDEX_PAGE, text,   "a", GLOBAL.HTML_DIR);
    write_to_file(INDEX_PAGE, sender, "a", GLOBAL.HTML_DIR);
+   free(header);
+   free(sender);
+   free(text);
 }
 
 void write_to_file(const char* filename, char* input, char* mode, char* path){

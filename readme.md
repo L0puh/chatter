@@ -8,6 +8,7 @@ tiny web chat application in pure c
 - SSL support with openSSL for https and wss
 - IPv6 support
 - MIME support: html/htm, jpg/jpeg, png, css, ico
+- PostgreSQL support (with `postgresql` library)
 
 ### install && run:
 ```shell
@@ -29,6 +30,11 @@ openssl x509 -req -in csr -signkey key.pem -out cert.pem -days 365
 ```
 4. use `--SSL` option to enable https and wss
 
+</details>
+<details><summary><b>with PostgreSQL</b></summary>
 
+1. install `postgresql` lib. 
+2. create `conninfo` file and fill in connection information 
+3. compile `server_db` version
 
-
+</details>

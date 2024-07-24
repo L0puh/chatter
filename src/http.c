@@ -182,6 +182,8 @@ void send_response(user_t *user, request_t *req){
    }    
    pthread_mutex_unlock(&user->mutex);
    free(response);  
+   free(req->header);
+   free(req->content);
 }
 
 void create_response(request_t *req, char* response, int *length){

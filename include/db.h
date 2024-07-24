@@ -1,13 +1,15 @@
 #ifndef DB_H
 #define DB_H
 
-#include "state.h"
 #include <libpq-fe.h>
 
 void db_init();
-void db_fetch_tables(char* filename);
+int  db_version();
+void db_migrate_tables(const char* filename);
 
-inline const char* db_error(){ return PQerrorMessage(GLOBAL.DB); }
-inline int db_version(){ return PQlibVersion(); }
+PGresult* db_select_all(const char* table_name);
+PGresult* db_exec(const char* query, int status);
+
+const char* db_error();
 
 #endif
