@@ -66,6 +66,7 @@ int main(int argc, char* argv[]){
       user->addr = get_str_addr(*sin);
       user->port = ntohs(sin->sin_port);
       user->current_page = GLOBAL.DEFAULT_PAGE;
+      user->response_page = GLOBAL.DEFAULT_PAGE;
       user->is_ws = 0;
       user->username = user->addr;
       pthread_mutex_init(&user->mutex, 0);

@@ -16,10 +16,12 @@ uint8_t get_options(int argc, char* argv[]);
 int  is_contain(char* message, char symbol);
 void remove_prefix(char* str, const char* prefix);
 
+void fetch_posts();
 void  update_html();
 char* get_file_content(const char* filename, size_t *length, char* mode, char* filepath);
 void  write_to_file(const char* filename, char* input, char* mode, char* path);
-void write_input(char* buffer, size_t sz, char* data);
+void write_input_to_file(char* buffer, size_t sz, char* data);
+void write_input_to_db(char* buffer, size_t sz, char* data);
 
 void logger(const char* where, char* what);
 void error(const char* where, char* what);

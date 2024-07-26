@@ -4,12 +4,19 @@
 #include <libpq-fe.h>
 #include <stdio.h>
 
-
 void db_migrate_tables(const char* filename){
    size_t len;
    char *query = get_file_content(filename, &len, "r", "resources/");
    DB_ASSERT(PQexec(GLOBAL.DB, query), PGRES_COMMAND_OK);
    logger(filename, "fetched successfully");
+   free(query);
+}
+
+void db_clear_table(char* table_name){
+   char* query;
+   query = malloc(MAXLEN);
+   sprintf(query, "TRUNCATE %s;", table_name);
+   db_exec(query, PGRES_COMMAND_OK);
    free(query);
 }
 

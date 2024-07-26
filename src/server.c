@@ -2,6 +2,7 @@
 #include "http.h"
 #include "state.h"
 #include "utils.h"
+#include "db.h"
 #include "websocket.h"
 
 #include <openssl/ssl.h>
@@ -13,7 +14,7 @@
 struct state GLOBAL;
 
 void set_current_page(user_t *user, char* res){
-   if (res == NULL || strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0){
+   if (res == NULL || strcmp(res, "/") == 0 || strcmp(res, CLEAR_COMMAND) == 0 || user->current_page == NULL){
       user->current_page = INDEX_PAGE;
       return;
    }
@@ -22,7 +23,9 @@ void set_current_page(user_t *user, char* res){
       user->current_page = GLOBAL.DEFAULT_WEBSOCKET_PAGE;
       return;
    }
-   if (strcmp(res, "post") == 0) return;
+   if (strcmp(res, "post") == 0) {
+      return;
+   }
    for (int i = 0; i < LEN(available_routs); i++){
       if (strcmp(res, available_routs[i]) == 0){
          user->current_page = res;
@@ -62,23 +65,21 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             } else if (is_contain(res, '/') && !is_static){
                 set_current_page(user, res);
                 user->response_page = user->current_page;
-                if (strcmp(res, CLEAR_COMMAND) == 0){ //FIXME: add database
+                if (strcmp(res, CLEAR_COMMAND) == 0){ 
                   logger(__func__, "delete chat history");
-                  system("rm -f resources/html/text.txt && touch resources/html/text.txt");
-                  update_html();
+                  db_clear_table("posts");
+                  fetch_posts();
                }
-
             } else if (is_static)
                user->response_page = res;
             break;
          case POST:
             logger(__func__, "POST request");
-            
             post = post_parse(buffer, bytes, "input=");
             if (res != NULL) {
                remove_prefix(post, "input=");
                url_decode(post);
-               write_input(post, strlen(post), user->username);
+               write_input_to_db(post, strlen(post), user->username);
             }
             break;
          default:

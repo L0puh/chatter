@@ -2,6 +2,7 @@
 #include "state.h"
 #include "db.h"
 
+#include <libpq-fe.h>
 #include <openssl/err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +105,41 @@ void remove_prefix(char *str, const char* prefix){
    }
 }
 
-void write_input(char* buffer, size_t sz, char* data){
+void fetch_posts(){
+   PGresult *res;
+   char *header, *sender, *new, *format;
+   
+   format = "<p><span style=\"color:#b0716f\"> %s:\
+             </span><span>%s </span></p>";
+   header = get_file_content(HEADER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
+   sender = get_file_content(SENDER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
+   res  = db_select_all("posts");
+  
+   write_to_file(INDEX_PAGE, header, "w", GLOBAL.HTML_DIR);
+   int rows = PQntuples(res);
+   new = malloc(MAXLEN);
+   for (int i = 0; i < rows; i++){
+      sprintf(new, format, PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
+      write_to_file(INDEX_PAGE, new, "a", GLOBAL.HTML_DIR);
+   }
+   write_to_file(INDEX_PAGE, sender, "a", GLOBAL.HTML_DIR);
+
+   free(header);
+   free(sender);
+   free(new);
+}
+
+void write_input_to_db(char* buffer, size_t sz, char* data){
+   char *new;
+
+   new = malloc(MAXLEN);
+   sprintf(new, "INSERT INTO posts(title, content) VALUES('%s', '%s');", data, buffer);
+   db_exec(new, PGRES_COMMAND_OK);
+   fetch_posts();
+   free(new);
+}
+
+void write_input_to_file(char* buffer, size_t sz, char* data){
    char *new, *format;
    format = "<p><span style=\"color:#b0716f\"> %s:\
              </span><span>%s </span></p>";
