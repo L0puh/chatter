@@ -39,7 +39,7 @@ void set_current_page(user_t *user, char* res){
 
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
    int is_static;
-   char *res, *post;
+   char *res, *post, *name, *pswd;
    req_type type = get_type_request(buffer, bytes);
 
    req->header = "OK";
@@ -76,10 +76,17 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
          case POST:
             logger(__func__, "POST request");
             post = post_parse(buffer, bytes, "input=");
-            if (res != NULL) {
+            if (post != NULL) {
                remove_prefix(post, "input=");
                url_decode(post);
                write_input_to_db(post, strlen(post), user->username);
+               break;
+            }
+            post = post_parse(buffer, bytes, "name=");
+            if (post != NULL){
+               post+=strlen("name=");
+               name = strtok(post, "&");
+               pswd = post+strlen(name)+1+strlen("pswd=");
             }
             break;
          default:

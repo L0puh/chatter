@@ -98,6 +98,7 @@ static char* available_routs[] = {
    "",
    "/",
    "index.html",
+   "login.html",
    "error.html",
    "websocket.html",
    "websocket_ssl.html",
