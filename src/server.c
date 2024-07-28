@@ -5,6 +5,7 @@
 #include "db.h"
 #include "websocket.h"
 
+#include <libpq-fe.h>
 #include <openssl/ssl.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -36,16 +37,62 @@ void set_current_page(user_t *user, char* res){
    return;
 }
 
+char* get_pswd_by_login(char* login){
+   int rows;
+   char* query;
+   PGresult *res;
+   query = malloc(MAXLEN);
+   sprintf(query, "SELECT password FROM users WHERE username='%s';", login);
+   res = db_exec(query, PGRES_TUPLES_OK);
+   if (PQresultStatus(res) == PGRES_TUPLES_OK)
+      return PQgetvalue(res, 0, 0);
+   return NULL;
+}
+
+int add_user(char* login, char* pswd){
+   char *query, *db_pswd;
+   db_pswd = get_pswd_by_login(login);
+   if (db_pswd == NULL){
+      query = malloc(MAXLEN);
+      /*   FIXME: add hashing for passwords   */
+      sprintf(query, "INSERT INTO users(username, password) VALUES('%s', '%s')", login, pswd);
+      db_exec(query, PGRES_COMMAND_OK);
+      free(query);
+   } else if (strcmp(pswd, db_pswd) != 0){
+      error(__func__, "password doesn't match"); 
+      return -1;
+   }
+   return 0;
+}
+
+char* parse_username_cookies(char* buffer){
+   char* p;
+   char* cp_buffer;
+   cp_buffer = malloc(strlen(buffer));
+   memcpy(cp_buffer, buffer, strlen(buffer));
+   if ((p = strstr(cp_buffer, "Cookie: username=")) != NULL){
+      p += strlen("Cookie: username=");
+      free(cp_buffer);
+      return strtok(p, "\r");
+
+   }
+   free(cp_buffer);
+   return NULL;
+}
 
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
    int is_static;
-   char *res, *post, *name, *pswd;
+   char *res, *post, *name, *pswd, *usrname;
    req_type type = get_type_request(buffer, bytes);
 
    req->header = "OK";
    req->code = OK;
    req->is_cookie = 0;
    
+   usrname = parse_username_cookies(buffer);
+   if (usrname != NULL)
+      user->username = usrname;
+
    if (bytes > 0){
       switch(type){
          case GET:
@@ -75,6 +122,7 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             break;
          case POST:
             logger(__func__, "POST request");
+            user->response_page = user->current_page;
             post = post_parse(buffer, bytes, "input=");
             if (post != NULL) {
                remove_prefix(post, "input=");
@@ -84,9 +132,12 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             }
             post = post_parse(buffer, bytes, "name=");
             if (post != NULL){
-               post+=strlen("name=");
-               name = strtok(post, "&");
-               pswd = post+strlen(name)+1+strlen("pswd=");
+               /* FIXME: parse name and password correctly */
+               post += strlen("name=");
+               if (add_user(name, pswd) != -1){
+                  set_cookie("username", name, req->cookies);
+                  req->is_cookie = 1;
+               }
             }
             break;
          default:
