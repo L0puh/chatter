@@ -134,11 +134,15 @@ void url_decode(char* str){
    *str='\0';
 }
 
-void set_cookie(char* param, char* value, char* dest){
-   char* cookie = malloc(MAXLEN);
+char* set_cookie(char* param, char* value){
+   char *cookie, *res;
+   cookie = malloc(MAXLEN);
    sprintf(cookie, "%s=%s;", param, value);
-   dest = malloc(strlen(cookie));
-   memcpy(dest, cookie, strlen(cookie));
+   res = malloc(strlen(cookie)+1);
+   strcpy(res, cookie);
+   res[strlen(cookie)] = '\0';
+   free(cookie);
+   return res;
 }
 
 char* cookies_parse(char *buffer, char* key){

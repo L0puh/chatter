@@ -82,16 +82,13 @@ char* parse_username_cookies(char* buffer){
 
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
    int is_static;
-   char *res, *post, *name, *pswd, *usrname;
+   char *res, *post, *name, *pswd;
    req_type type = get_type_request(buffer, bytes);
 
    req->header = "OK";
    req->code = OK;
    req->is_cookie = 0;
    
-   usrname = parse_username_cookies(buffer);
-   if (usrname != NULL)
-      user->username = usrname;
 
    if (bytes > 0){
       switch(type){
@@ -130,14 +127,28 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                write_input_to_db(post, strlen(post), user->username);
                break;
             }
-            post = post_parse(buffer, bytes, "name=");
+            post = post_parse(buffer, bytes, "login=");
             if (post != NULL){
-               /* FIXME: parse name and password correctly */
-               post += strlen("name=");
+               post +=strlen("login=");
+
+               char* tok = strtok(post, "&");
+               name = malloc(strlen(tok)+1);
+               strcpy(name, tok);
+               name[strlen(tok)] = '\0';
+               printf("[%s](%s)\n", name, post);
+
+               tok = strtok(NULL, "&");
+               tok+=strlen("pswd=");
+               pswd = malloc(strlen(tok)+1);
+               strcpy(pswd, tok);
+               pswd[strlen(tok)] = '\0';
+               
                if (add_user(name, pswd) != -1){
-                  set_cookie("username", name, req->cookies);
+                  req->cookies = set_cookie("username", name);
                   req->is_cookie = 1;
                }
+               free(name);
+               free(pswd);
             }
             break;
          default:
@@ -221,6 +232,9 @@ void* handle_client(void* th_user){
    user = (user_t*)th_user;
   
    while((bytes = recv_buffer(user, buffer, sizeof(buffer))) > 0){
+      char* usrname = parse_username_cookies(buffer);
+      if (usrname != NULL)
+         user->username = usrname;
       if (!user->is_ws){
          res = handle_http_request(user, &req, buffer, bytes);
          send_response(user, &req);
