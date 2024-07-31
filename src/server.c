@@ -66,18 +66,32 @@ int add_user(char* login, char* pswd){
 }
 
 char* parse_username_cookies(char* buffer){
-   char* p;
+   char* p, *res;
    char* cp_buffer;
    cp_buffer = malloc(strlen(buffer));
    memcpy(cp_buffer, buffer, strlen(buffer));
    if ((p = strstr(cp_buffer, "Cookie: username=")) != NULL){
       p += strlen("Cookie: username=");
+      p = strtok(p, "\r");
+      res = malloc(strlen(p)+1);
+      strcpy(res, p);
+      res[strlen(p)] = '\0';
       free(cp_buffer);
-      return strtok(p, "\r");
+      return res;
 
    }
    free(cp_buffer);
    return NULL;
+}
+
+void update_username(user_t *user, char* buffer){
+   char* usrname = parse_username_cookies(buffer);
+   if (usrname != NULL){
+      pthread_mutex_lock(&GLOBAL.mutex); 
+      strcpy(user->username, usrname);
+      pthread_mutex_unlock(&GLOBAL.mutex); 
+      free(usrname);
+   } 
 }
 
 req_type handle_http_request(user_t *user, request_t *req, char* buffer, int bytes){
@@ -89,7 +103,6 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
    req->code = OK;
    req->is_cookie = 0;
    
-
    if (bytes > 0){
       switch(type){
          case GET:
@@ -135,7 +148,6 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                name = malloc(strlen(tok)+1);
                strcpy(name, tok);
                name[strlen(tok)] = '\0';
-               printf("[%s](%s)\n", name, post);
 
                tok = strtok(NULL, "&");
                tok+=strlen("pswd=");
@@ -189,10 +201,9 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
    ws_frame_t frame;
 
    char* ws_buffer = ws_recv_frame(buffer, &res);
-   
    if (ws_buffer == NULL) return;
    user->ws_state = WS_TEXT;
-
+   
    switch (res){
       case ERROR:
       case CLOSE:
@@ -224,17 +235,14 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
 
 void* handle_client(void* th_user){
    int bytes;
-   user_t *user; 
+   user_t *user;
    request_t req;
    req_type res;
    char buffer[MAXLEN];
-  
    user = (user_t*)th_user;
   
    while((bytes = recv_buffer(user, buffer, sizeof(buffer))) > 0){
-      char* usrname = parse_username_cookies(buffer);
-      if (usrname != NULL)
-         user->username = usrname;
+      update_username(user, buffer);
       if (!user->is_ws){
          res = handle_http_request(user, &req, buffer, bytes);
          send_response(user, &req);
@@ -266,3 +274,5 @@ void handle_termination(int sig){
    logger(__func__, "terminating the program");
    exit(0);
 }
+
+
