@@ -6,6 +6,7 @@
 #include "websocket.h"
 
 #include <libpq-fe.h>
+#include <openssl/sha.h>
 #include <openssl/ssl.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -49,17 +50,43 @@ char* get_pswd_by_login(char* login){
    return NULL;
 }
 
+char* hash_password(char* pswd){
+
+   //TODO: add salting
+   SHA256_CTX ctx;
+   unsigned char* buffer = malloc(SHA256_DIGEST_LENGTH);
+   SHA256_Init(&ctx);
+   SHA256_Update(&ctx, (unsigned char*) pswd, strlen(pswd));
+   SHA256_Final(buffer, &ctx);
+
+    char* hex_str = malloc(SHA256_DIGEST_LENGTH * 2 + 1); 
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) 
+        sprintf(&hex_str[i * 2], "%02x", buffer[i]);
+   hex_str[SHA256_DIGEST_LENGTH * 2] = '\0';
+
+   free(buffer);
+   return hex_str;
+}
+
 int add_user(char* login, char* pswd){
    char *query, *db_pswd;
+   char* buffer = malloc(SHA256_DIGEST_LENGTH);
+  
+   buffer = hash_password(pswd);
    db_pswd = get_pswd_by_login(login);
+
    if (db_pswd == NULL){
+      size_t *len;
       query = malloc(MAXLEN);
-      /*   FIXME: add hashing for passwords   */
-      sprintf(query, "INSERT INTO users(username, password) VALUES('%s', '%s')", login, pswd);
+      sprintf(query, 
+            "INSERT INTO users(username, password) VALUES($$%s$$, $$%s$$);", 
+             login, buffer);
       db_exec(query, PGRES_COMMAND_OK);
       free(query);
-   } else if (strcmp(pswd, db_pswd) != 0){
+      free(buffer);
+   } else if (strcmp((char*) buffer, db_pswd) != 0){
       error(__func__, "password doesn't match"); 
+      free(buffer);
       return -1;
    }
    return 0;

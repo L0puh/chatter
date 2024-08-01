@@ -17,6 +17,7 @@ void db_clear_table(char* table_name){
    query = malloc(MAXLEN);
    sprintf(query, "TRUNCATE %s;", table_name);
    db_exec(query, PGRES_COMMAND_OK);
+   logger(table_name, "cleared");
    free(query);
 }
 
