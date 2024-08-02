@@ -3,15 +3,12 @@
 <head>
    <meta charset="UTF-8">
    <title>chatter</title>
-   <link rel="stylesheet" href="static/style.css"/>
+   <link rel="shortcut icon" type="image/x-icon" href="static/favicon.ico" />
+   <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
    <a href ="/"><input value = "INDEX" type="button"></a>
    <h2>WebSocket</h2>
-    <p>
-       <input  id="name_input" type="TEXT" placeholder="your name"></input>
-       <button id="name">ok</button>
-    </p>
     <textarea id = "message_field" cols="60" rows="6"></textarea>
     <p><button id="send_button">SEND</button></p>
     <div id="output"></div>
@@ -20,13 +17,10 @@
     const button = document.querySelector("#send_button");
     const output = document.querySelector("#output");
     const textarea = document.querySelector("#message_field");
-    const namearea = document.querySelector("#name_input");
-    const namebutton = document.querySelector("#name");
     const wsUri = "ws://localhost:8080/";
     const websocket = new WebSocket(wsUri);
 
     button.addEventListener("click", onClickButton);
-    namebutton.addEventListener("click", onNameButton);
 
     websocket.onopen = (e) => {
        writeToScreen("<span class='log'>CONNECTED</span>");
@@ -37,7 +31,6 @@
     };
 
     websocket.onmessage = (e) => {
-       console.log("NEW MESSAGE");
        const i = e.data.indexOf('|');
        const [name, text] = [e.data.slice(0,i), e.data.slice(i+1)];
        writeToScreen(`<span style="color:red">${name}: </span>${text}`);
@@ -55,16 +48,9 @@
        output.insertAdjacentHTML("afterbegin", `<p class="message">${message}</p>`);
     }
 
-    function onNameButton() {
-       const name = namearea.value;
-       name && doSend(`NAME: ${name}`);
-       textarea.focus();
-
-    }
     function onClickButton() {
       const text = textarea.value;
-
-      text && doSend(`TEXT: ${text}`);
+      text && doSend(text);
       textarea.value = "";
       textarea.focus();
     }

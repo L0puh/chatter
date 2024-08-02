@@ -244,15 +244,10 @@ void handle_ws_request(user_t *user, char* buffer, int bytes){
          free(message);
          break;
       case OK:
-         res = ws_parse_message(ws_buffer);
-         if (res == NAME)
-            user->username = ws_buffer;
-         else{
-            message = malloc(MAXLEN);
-            sprintf(message, "%s|%s", user->username, ws_buffer);
-            send_text_frame(message, strlen(message));
-            free(message);
-         }
+         message = malloc(MAXLEN);
+         sprintf(message, "%s|%s", user->username, ws_buffer);
+         send_text_frame(message, strlen(message));
+         free(message);
          break;
       default:
          return;
@@ -268,6 +263,7 @@ void* handle_client(void* th_user){
    char buffer[MAXLEN];
    user = (user_t*)th_user;
   
+   ws_add_connection(user);
    while((bytes = recv_buffer(user, buffer, sizeof(buffer))) > 0){
       update_username(user, buffer);
       if (!user->is_ws){

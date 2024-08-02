@@ -166,21 +166,18 @@ void ws_send_close(){
    ws_send_broadcast(res, buffer_sz);
 }
 
-
-int ws_parse_message(char* ws_buffer){
-   char* p, *text = "TEXT: ", *name = "NAME: ";
-   if ((p = strstr(ws_buffer, text)) != NULL){
-      p+=strlen(text);
-      strcpy(ws_buffer, p);
-      return TEXT;
-   } else if ((p = strstr(ws_buffer, name)) != NULL){
-      p+=strlen(name);
-      strcpy(ws_buffer, p);
-      return NAME;
-   }
-   return NONE;
+void ws_add_connection(user_t *user){
+   if (!is_connection_exists(user)){
+      pthread_mutex_lock(&GLOBAL.mutex);
+      if (GLOBAL.connections_size+1 >= QUERY)
+         error(__func__, "limit of connections");
+      else {
+         user->ws_id = GLOBAL.connections_size;
+         GLOBAL.connections[GLOBAL.connections_size++] = user;
+      }
+      pthread_mutex_unlock(&GLOBAL.mutex);
+   } 
 }
-
 void ws_establish_connection(char* buffer, request_t *req, user_t *user){
    char* ws;
    logger(__func__, "WebSocket request");
@@ -195,17 +192,6 @@ void ws_establish_connection(char* buffer, request_t *req, user_t *user){
    req->header = "Switching Protocols";
    req->accept = ws_create_accept(ws);
    req->length = 0;
-   
-   if (!is_connection_exists(user)){
-      pthread_mutex_lock(&GLOBAL.mutex);
-      if (GLOBAL.connections_size+1 >= QUERY)
-         error(__func__, "limit of connections");
-      else {
-         user->ws_id = GLOBAL.connections_size;
-         GLOBAL.connections[GLOBAL.connections_size++] = user;
-      }
-      pthread_mutex_unlock(&GLOBAL.mutex);
-   } 
    free(ws);
 }
 
