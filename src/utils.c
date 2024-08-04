@@ -151,6 +151,17 @@ void write_input_to_file(char* buffer, size_t sz, char* data){
    free(new);
 }
 
+char* from_bytes_to_string(unsigned char* bytes, size_t len){
+   char* res = malloc(len * 2 + 1);
+   if (res == NULL){
+      error(__func__, "failed malloc");
+      return NULL;
+   }
+   for (int i = 0; i < len; i++)
+      sprintf(&res[i*2], "%02x", bytes[i]);
+   res[len*2] = '\0';
+   return res;
+}
 /************************************************/
 
 void logger(const char* where, char* what){

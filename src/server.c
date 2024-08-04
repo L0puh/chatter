@@ -8,6 +8,7 @@
 #include <libpq-fe.h>
 #include <openssl/sha.h>
 #include <openssl/ssl.h>
+#include <openssl/rand.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,57 +39,69 @@ void set_current_page(user_t *user, char* res){
    return;
 }
 
-char* get_pswd_by_login(char* login){
+char* get_by_login(char* what, char* login){
    int rows;
    char* query;
    PGresult *res;
    query = malloc(MAXLEN);
-   sprintf(query, "SELECT password FROM users WHERE username='%s';", login);
+   sprintf(query, "SELECT %s FROM users WHERE username='%s';", what, login);
    res = db_exec(query, PGRES_TUPLES_OK);
    if (PQresultStatus(res) == PGRES_TUPLES_OK)
       return PQgetvalue(res, 0, 0);
    return NULL;
 }
 
-char* hash_password(char* pswd){
-
-   //TODO: add salting
+char* hash_password(char* pswd, char* salt){
    SHA256_CTX ctx;
-   unsigned char* buffer = malloc(SHA256_DIGEST_LENGTH);
+   char *salted_pswd, *hex_str;
+   unsigned char *buffer; 
+
+   salted_pswd = malloc((strlen(pswd) + strlen(salt)) * CHAR_BIT); 
+   sprintf(salted_pswd, "%s%s", pswd, salt);
+
+   buffer = malloc(SHA256_DIGEST_LENGTH);
    SHA256_Init(&ctx);
-   SHA256_Update(&ctx, (unsigned char*) pswd, strlen(pswd));
+   SHA256_Update(&ctx, (unsigned char*) salted_pswd, strlen(salted_pswd));
    SHA256_Final(buffer, &ctx);
 
-    char* hex_str = malloc(SHA256_DIGEST_LENGTH * 2 + 1); 
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) 
-        sprintf(&hex_str[i * 2], "%02x", buffer[i]);
-   hex_str[SHA256_DIGEST_LENGTH * 2] = '\0';
-
+   hex_str = from_bytes_to_string(buffer, SHA256_DIGEST_LENGTH);
    free(buffer);
+   free(salted_pswd);
    return hex_str;
 }
 
+
 int add_user(char* login, char* pswd){
-   char *query, *db_pswd;
+   unsigned char salt[32];    
+   char *query, *db_pswd, *db_salt, *salt_str;
    char* buffer = malloc(SHA256_DIGEST_LENGTH);
   
-   buffer = hash_password(pswd);
-   db_pswd = get_pswd_by_login(login);
-
-   if (db_pswd == NULL){
+   db_salt = get_by_login("salt", login);
+   if (db_salt != NULL){
+      db_pswd = get_by_login("password", login);
+      buffer  = hash_password(pswd,  db_salt);
+      if (strcmp((char*) buffer, db_pswd) != 0){
+         error(__func__, "password doesn't match"); 
+         free(buffer);
+         return -1;
+      }
+   } else {
       size_t *len;
+      RAND_bytes(salt, 32);
+     
+      salt_str = from_bytes_to_string(salt, 32); 
+      buffer = hash_password(pswd, salt_str);
       query = malloc(MAXLEN);
+
       sprintf(query, 
-            "INSERT INTO users(username, password) VALUES($$%s$$, $$%s$$);", 
-             login, buffer);
+            "INSERT INTO users(username, salt, password) VALUES($$%s$$, $$%s$$, $$%s$$);", 
+             login, salt_str, buffer);
+      
       db_exec(query, PGRES_COMMAND_OK);
       free(query);
-      free(buffer);
-   } else if (strcmp((char*) buffer, db_pswd) != 0){
-      error(__func__, "password doesn't match"); 
-      free(buffer);
-      return -1;
-   }
+      free(salt_str);
+   }    
+   free(buffer);
    return 0;
 }
 

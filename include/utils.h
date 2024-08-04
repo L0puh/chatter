@@ -32,4 +32,6 @@ void db_errorl(const char* where, char* file, int line);
 char*  base64_encode(const unsigned char* message, size_t size);
 size_t base64_encode_size(size_t strlen);
 
+char* from_bytes_to_string(unsigned char* bytes, size_t len);
+
 #endif

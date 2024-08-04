@@ -18,10 +18,9 @@ void connections_cleanup();
 void send_text_frame(char* message, int len);
 void handle_termination(int sig);
 
-      /* DATABASE RELATED: */
 int   add_user(char* login, char* pswd);
 void  update_username(user_t *user, char* buffer);
-char* get_pswd_by_login(char* login);
-char* hash_password(char* pswd);
+char* get_by_login(char* what, char* login);
+char* hash_password(char* pswd, char* salt);
 
 #endif

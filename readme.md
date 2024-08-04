@@ -8,7 +8,8 @@ tiny web chat application in pure c
 - SSL support with openSSL for https and wss
 - IPv6 support
 - MIME support: html/htm, jpg/jpeg, png, css, ico
-- PostgreSQL support (with `postgresql` library)
+- PostgreSQL support (with `postgresql` library) 
+- hashing and salting of passwords
 
 ### install && run:
 ```shell
