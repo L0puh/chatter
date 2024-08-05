@@ -5,26 +5,34 @@ INCLUDE_DIR=include
 SOURCES=$(wildcard src/*c)
 OBJECTS=$(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 LIBS= -lcrypto -lpthread -lssl -lpq
-FLAGS=-I$(INCLUDE_DIR) -Wno-deprecated-declarations $(LIBS) 
+CCFLAGS=-I$(INCLUDE_DIR) -Wno-deprecated-declarations $(LIBS) 
 
-all: server_db 
-server_db: FLAGS+=-DWITH_DB 
-debug: FLAGS+=-g -DDEBUG 
+all: server
+
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+   CCFLAGS+=-DDEBUG -g
+endif
+
+WITH_DB ?= 1
+ifeq ($(WITH_DB), 1)
+	CCFLAGS+=-DWITH_DB 
+endif
+
+LOG_ON ?= 1
+ifeq ($(WITH_DB), 1)
+	CCFLAGS+=-LOG_ON
+endif
+
 
 $(BUILD_DIR)/%.o: src/%.c
 	mkdir -p $(BUILD_DIR)
-	$(CC) -c -o $@ $< $(FLAGS)
+	$(CC) -c -o $@ $< $(CCFLAGS)
 
 server: $(OBJECTS) 
-	$(CC) -o $@ $^ $(FLAGS) 
-
-server_db: $(OBJECTS)
-	$(CC) $(FLAGS) -o $@ $^ 
-
-debug: $(OBJECTS)
-	$(CC) $(FLAGS) -o $@ $^ 
+	$(CC) -o $@ $^ $(CCFLAGS)
 
 clean:
-	rm -rf $(BUILD_DIR)/* server debug server_db
+	rm -rf $(BUILD_DIR)/* server
 
 

@@ -13,7 +13,7 @@ tiny web chat application in pure c
 
 ### install && run:
 ```shell
-make . && ./server <HOST> <PORT>
+make WITH_DB=0 LOG_ON=1 DEBUG=0&& ./server <HOST> <PORT> <FLAGS> 
 ```
 <details><summary><b>with SSL</b></summary>
   
@@ -36,6 +36,6 @@ openssl x509 -req -in csr -signkey key.pem -out cert.pem -days 365
 
 1. install `postgresql` lib. 
 2. create `conninfo` file and fill in connection information 
-3. compile `server_db` version
+3. compile with `WITH_DB=1` 
 
 </details>

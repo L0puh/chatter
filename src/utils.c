@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOG_ON /*enable logging*/
-
 void update_html(){
    char* header = get_file_content(HEADER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
    char* sender = get_file_content(SENDER_PAGE,   NULL, "r", GLOBAL.HTML_DIR);
@@ -174,11 +172,13 @@ void errorl(const char* where, char* file, int line){
 #ifdef LOG_ON
     printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, strerror(errno));
 #endif
+   exit(-1);
 }
 void db_errorl(const char* where, char* file, int line){
 #ifdef LOG_ON
     printf("[-] ERROR: %s[%s:%d]: %s\n", where, file, line, db_error());
 #endif
+   exit(-1);
 }
 void ssl_error(const char* where, char* file, int line){
 #ifdef LOG_ON
@@ -187,9 +187,10 @@ void ssl_error(const char* where, char* file, int line){
 }
 void error(const char* where, char* what){
 #ifdef LOG_ON
-   if (errno != 0)
+   if (errno != 0){
       printf("[-] ERROR: %s: %s - %s\n", where, what, strerror(errno));
-   else
+      exit(-1);
+   } else
       printf("[-] INFO %s: %s\n", where, what);
 #endif
 }

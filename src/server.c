@@ -164,8 +164,10 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                 user->response_page = user->current_page;
                 if (strcmp(res, CLEAR_COMMAND) == 0){ 
                   logger(__func__, "delete chat history");
+#ifdef WITH_DB
                   db_clear_table("posts");
                   fetch_posts();
+#endif 
                }
             } else if (is_static)
                user->response_page = res;
@@ -177,9 +179,12 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
             if (post != NULL) {
                remove_prefix(post, "input=");
                url_decode(post);
+#ifdef WITH_DB
                write_input_to_db(post, strlen(post), user->username);
+#endif
                break;
             }
+#ifdef WITH_DB
             post = post_parse(buffer, bytes, "login=");
             if (post != NULL){
                post +=strlen("login=");
@@ -202,7 +207,8 @@ req_type handle_http_request(user_t *user, request_t *req, char* buffer, int byt
                free(name);
                free(pswd);
             }
-            break;
+#endif 
+         break;
          default:
             error(__func__, "unsupported type of request");
             return NONE;
