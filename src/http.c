@@ -39,7 +39,7 @@ int init_server(char* host, char* port, struct addrinfo *servaddr){
 #ifdef WITH_DB
    printf("[+] PostgreSQL version: %d\n", db_version());
 #endif
-   printf("[+] %s is running on port %s ", host, port);
+   printf("[+] %s is running on port %s (%d)", host, port, htons(atoi(port)));
    switch(servaddr->ai_family){
       case AF_INET:
          printf("[IPv4]\n");
